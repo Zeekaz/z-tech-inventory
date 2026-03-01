@@ -1,17 +1,53 @@
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const express = require('express');
+const path = require('path');
+const axios = require('axios');
 
 const app = express();
 app.use(express.json());
 
+// ทำให้เซิร์ฟเวอร์เปิดหน้าเว็บ dashboard.html ที่บอสมีอยู่ได้
+app.use(express.static(path.join(__dirname))); 
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const LINE_TOKEN = process.env.LINE_TOKEN;
 const LIFF_ID = "2009261202-Jruo3vhw"; 
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// API รับข้อมูลจากหน้ากล้องสแกน
+// 1. หูฟังแชท LINE (Webhook) - กลับมาแล้วค่ะ!
+app.post('/webhook', async (req, res) => {
+    res.sendStatus(200);
+    const events = req.body.events;
+    if (!events) return;
+
+    for (const event of events) {
+        if (event.type === 'message' && event.message.type === 'text') {
+            const userText = event.message.text.trim();
+            const replyToken = event.replyToken;
+
+            // เผื่อเซลล์พิมพ์ถามตรงๆ
+            if (userText.includes("สต๊อก") || userText.includes("สต๊อค")) {
+                await reply(replyToken, "🌑 เช็กสต๊อกทั้งหมดได้ที่ลิงก์นี้ค่ะ:\nhttps://z-tech-bot.onrender.com/dashboard.html");
+            }
+        }
+    }
+});
+
+async function reply(token, msg) {
+    try {
+        await axios.post('https://api.line.me/v2/bot/message/reply', {
+            replyToken: token,
+            messages: [{ type: 'text', text: msg }]
+        }, {
+            headers: { 'Authorization': 'Bearer ' + LINE_TOKEN }
+        });
+    } catch (e) { console.log("❌ Reply Error:", e.response ? e.response.data : e.message); }
+}
+
+// 2. สมองกลประมวลผลการสแกนเข้า-ออก
 app.post('/api/scan', async (req, res) => {
     const { barcode, action, weight, user } = req.body; 
 
@@ -19,7 +55,6 @@ app.post('/api/scan', async (req, res) => {
         return res.json({ success: false, message: '❌ QR Code ไม่ใช่ของ Z-Tech ค่ะ!' });
     }
 
-    // เช็กสต๊อกเดิม
     const { data: item, error } = await supabase.from('ztech_inventory').select('*').eq('sku', barcode).single();
     
     if(error || !item) {
@@ -36,10 +71,8 @@ app.post('/api/scan', async (req, res) => {
         newWeight -= change;
     }
 
-    // อัปเดตสต๊อก
     await supabase.from('ztech_inventory').update({ stock_weight: newWeight, last_updated: new Date() }).eq('sku', barcode);
     
-    // บันทึก Log คนทำรายการ
     await supabase.from('ztech_logs').insert([{ 
         sku: barcode, 
         action_type: action.toUpperCase(), 
@@ -47,10 +80,10 @@ app.post('/api/scan', async (req, res) => {
         performed_by: user || 'Staff'
     }]);
 
-    res.json({ success: true, message: `✅ สำเร็จ! อัปเดตสต๊อก ${item.strain_name} (${item.grade}) เหลือ ${newWeight} กรัม` });
+    res.json({ success: true, message: `✅ สำเร็จ! สต๊อก ${item.strain_name} (${item.grade}) เหลือ ${newWeight} กรัม` });
 });
 
-// หน้ากล้องสแกน (UI Dark Gothic)
+// 3. หน้ากล้องสแกนเต็มจอ
 app.get('/scan', (req, res) => {
     res.send(`
     <html>
@@ -79,7 +112,6 @@ app.get('/scan', (req, res) => {
                 currentAction = new URLSearchParams(window.location.search).get("action");
                 
                 const scanner = new Html5Qrcode("reader");
-                // สแกนแบบเต็มจอ ปลดล็อกกรอบเล็ก
                 scanner.start({facingMode:"environment"}, {fps: 10}, (decodedText) => {
                     if(decodedText.startsWith("ZT-")) {
                         scanner.stop();
@@ -120,4 +152,4 @@ app.get('/scan', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(\`🚀 [System Ready]: อาณาจักร Z-Tech รันที่พอร์ต \${PORT}\`));
+app.listen(PORT, () => console.log(`🚀 [System Ready]: อาณาจักร Z-Tech รันที่พอร์ต ${PORT}`));
