@@ -9,16 +9,39 @@
         /* Gothic Dark Theme */
         body { background-color: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
         .container { max-width: 900px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 8px; background: #111; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
-        h1 { color: #d4af37; text-align: center; font-size: 26px; letter-spacing: 3px; text-transform: uppercase; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        h1 { color: #d4af37; text-align: center; font-size: 26px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { border-bottom: 2px solid #d4af37; padding: 12px; text-align: left; color: #d4af37; font-size: 16px; }
         td { padding: 12px; border-bottom: 1px solid #222; font-size: 15px; }
         .badge { background: #333; color: #d4af37; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; border: 1px solid #d4af37; }
+        
+        /* สไตล์ปุ่มสร้าง QR Code */
+        .btn-create {
+            display: inline-block; 
+            padding: 12px 24px; 
+            background: #d4af37; 
+            color: #000; 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 16px; 
+            border-radius: 5px; 
+            border: 2px solid #b5952f; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+        .btn-create:hover { background: #b5952f; transform: scale(1.02); }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🌑 Z-TECH IMPERIAL VAULT 🌑</h1>
+        
+        <div style="text-align: center; margin-bottom: 30px;">
+            <a href="manage.html" class="btn-create">
+                ➕ สร้างสายพันธุ์ใหม่ & ออก QR Code
+            </a>
+        </div>
+
         <table>
             <thead>
                 <tr>
