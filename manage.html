@@ -3,85 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Z-Tech Global | Management</title>
+    <title>Z-Tech Global | QR Factory</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { background-color: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 20px; }
-        .container { max-width: 500px; margin: auto; border: 1px solid #333; padding: 30px; border-radius: 8px; background: #111; }
-        h1 { color: #d4af37; text-align: center; letter-spacing: 2px; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; color: #d4af37; font-weight: bold; }
-        input, select { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: #d4af37; color: black; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #b8962d; }
-        #status { margin-top: 20px; text-align: center; padding: 10px; border-radius: 4px; display: none; }
+        body { background-color: #0a0a0a; color: #d4af37; font-family: 'Segoe UI', sans-serif; padding: 20px; text-align: center; }
+        .container { max-width: 500px; margin: auto; border: 1px solid #333; padding: 30px; border-radius: 8px; background: #111; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        h1 { font-size: 22px; letter-spacing: 2px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: #e0e0e0; }
+        input, select { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; background: #d4af37; color: black; font-weight: bold; font-size: 18px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #b5952f; }
+        #qr-result { margin-top: 30px; display: none; background: #fff; padding: 20px; border-radius: 8px; color: #000; }
+        #qrcode { display: flex; justify-content: center; margin-top: 15px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>TRANSACTION</h1>
+        <h1>🌑 สร้างสายพันธุ์ใหม่ & ออก QR Code 🌑</h1>
+        
         <div class="form-group">
-            <label>รหัสสินค้า (Product SKU)</label>
-            <input type="text" id="sku" placeholder="ระบุหรือสแกนบาร์โค้ด">
+            <label>ชื่อสายพันธุ์ (Strain Name):</label>
+            <input type="text" id="strain" placeholder="เช่น OG Kush, White Widow">
         </div>
+        
         <div class="form-group">
-            <label>ประเภทรายการ (Type)</label>
-            <select id="type">
-                <option value="IN">บันทึกการนำเข้าสินค้า (Stock IN)</option>
-                <option value="OUT">บันทึกการนำจ่ายสินค้า (Stock OUT)</option>
+            <label>ประเภท (Category):</label>
+            <select id="category">
+                <option value="ดอก">ดอก (Flower)</option>
+                <option value="ผง">ผง (Kief/Shake)</option>
+                <option value="ใบทริม">ใบทริม (Trim)</option>
             </select>
         </div>
+
         <div class="form-group">
-            <label>น้ำหนักสุทธิ (กรัม)</label>
-            <input type="number" id="weight" step="0.01" placeholder="0.00">
+            <label>เกรดสินค้า (Grade):</label>
+            <select id="grade">
+                <option value="TOP">TOP</option>
+                <option value="Mid">Mid</option>
+                <option value="Pop">Pop</option>
+                <option value="Minipop">Minipop</option>
+                <option value="Mixed">Mixed</option>
+                <option value="Reject">ตีกลับ (Reject)</option>
+            </select>
         </div>
-        <button onclick="handleTransaction()">ยืนยันบันทึกรายการ</button>
-        <div id="status"></div>
+
+        <button id="btn-generate" onclick="generateProduct()">➕ บันทึกเข้าคลัง & สร้าง QR Code</button>
+        <p id="status" style="margin-top: 10px; color: #ff4444;"></p>
+
+        <div id="qr-result">
+            <h3 style="margin:0; color:#000;">แสกนเพื่อทำรายการ</h3>
+            <p id="sku-text" style="font-family: monospace; font-size: 18px; font-weight: bold; margin: 10px 0;"></p>
+            <div id="qrcode"></div>
+            <p style="font-size: 12px; color: #666;">* สามารถแคปจอหรือปรินต์ไปแปะถุงได้ทันที</p>
+        </div>
     </div>
 
     <script>
-        const _supabase = supabase.createClient('https://zwpagcqoopvinufsgluc.supabase.co', 'sb_publishable_mirbWPp7tEPi5YiTFPnSSw_BZsKkfLa');
+        const supabaseUrl = 'https://zwpagcqoopvinufsgluc.supabase.co';
+        const supabaseKey = 'sb_publishable_mirbWPp7tEPi5YiTFPnSSw_BZsKkfLa'; 
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        async function handleTransaction() {
-            const sku = document.getElementById('sku').value;
-            const type = document.getElementById('type').value;
-            const weight = parseFloat(document.getElementById('weight').value);
-            const statusDiv = document.getElementById('status');
+        async function generateProduct() {
+            const strain = document.getElementById('strain').value.trim();
+            const category = document.getElementById('category').value;
+            const grade = document.getElementById('grade').value;
+            const statusText = document.getElementById('status');
+            const btn = document.getElementById('btn-generate');
 
-            if (!sku || isNaN(weight)) {
-                alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+            if (!strain) {
+                statusText.innerText = "❌ กรุณากรอกชื่อสายพันธุ์ค่ะ";
                 return;
             }
 
-            statusDiv.style.display = 'block';
-            statusDiv.innerHTML = "กำลังประมวลผล...";
-            statusDiv.style.background = '#333';
+            btn.innerText = "กำลังสร้างฐานข้อมูล...";
+            btn.disabled = true;
 
-            // 1. ตรวจสอบสินค้าในคลัง
-            const { data: product, error: pError } = await _supabase.from('products').select('*').eq('sku', sku).single();
+            // สร้างรหัส SKU อัตโนมัติ (เช่น ZT-OGK-TOP-001)
+            const prefix = strain.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
+            const randomLot = Math.floor(100 + Math.random() * 900); // สุ่มเลขล็อต 3 หลัก
+            const newSku = `ZT-${prefix}-${grade.toUpperCase()}-${randomLot}`;
 
-            if (pError || !product) {
-                statusDiv.innerHTML = "❌ ไม่พบรหัสสินค้าในระบบ";
-                statusDiv.style.background = "#550000";
+            // บันทึกลง Supabase
+            const { error } = await _supabase.from('ztech_inventory').insert([{
+                sku: newSku,
+                strain_name: strain,
+                category: category,
+                grade: grade,
+                stock_weight: 0 // เริ่มต้นที่ 0 กรัม รอสแกนรับเข้า
+            }]);
+
+            if (error) {
+                statusText.innerText = "❌ ขัดข้อง: " + error.message;
+                btn.innerText = "➕ บันทึกเข้าคลัง & สร้าง QR Code";
+                btn.disabled = false;
                 return;
             }
 
-            // 2. คำนวณน้ำหนักใหม่
-            let newWeight = product.stock_weight;
-            if (type === 'IN') newWeight += weight;
-            else newWeight -= weight;
+            // แสดง QR Code
+            statusText.innerText = "✅ สร้างสำเร็จ!";
+            statusText.style.color = "#4CAF50";
+            
+            document.getElementById('sku-text').innerText = "รหัส: " + newSku;
+            document.getElementById('qrcode').innerHTML = ""; // ล้างรูปเก่า
+            new QRCode(document.getElementById("qrcode"), {
+                text: newSku,
+                width: 200,
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
 
-            // 3. อัปเดตสต๊อกและบันทึกประวัติ
-            const { error: uError } = await _supabase.from('products').update({ stock_weight: newWeight }).eq('sku', sku);
-            await _supabase.from('inventory_logs').insert([{ sku, type, weight }]);
-
-            if (uError) {
-                statusDiv.innerHTML = "❌ เกิดข้อผิดพลาดในการบันทึก";
-            } else {
-                statusDiv.innerHTML = "✅ บันทึกรายการสำเร็จ";
-                statusDiv.style.background = "#004400";
-                setTimeout(() => location.reload(), 2000);
-            }
+            document.getElementById('qr-result').style.display = "block";
+            btn.innerText = "➕ บันทึกเข้าคลัง & สร้าง QR Code";
+            btn.disabled = false;
         }
     </script>
 </body>
