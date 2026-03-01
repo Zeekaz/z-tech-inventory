@@ -3,62 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Z-Tech Global | Inventory Dashboard</title>
+    <title>Z-Tech Global | Imperial Vault</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* Gothic Dark Theme */
         body { background-color: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 8px; background: #111; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        h1 { color: #d4af37; text-align: center; font-size: 24px; letter-spacing: 2px; }
-        .status-card { border-left: 4px solid #d4af37; background: #1a1a1a; padding: 15px; margin-bottom: 20px; }
+        .container { max-width: 900px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 8px; background: #111; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        h1 { color: #d4af37; text-align: center; font-size: 26px; letter-spacing: 3px; text-transform: uppercase; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { border-bottom: 2px solid #333; padding: 10px; text-align: left; color: #d4af37; }
-        td { padding: 10px; border-bottom: 1px solid #222; }
-        .badge { background: #d4af37; color: black; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        th { border-bottom: 2px solid #d4af37; padding: 12px; text-align: left; color: #d4af37; font-size: 16px; }
+        td { padding: 12px; border-bottom: 1px solid #222; font-size: 15px; }
+        .badge { background: #333; color: #d4af37; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; border: 1px solid #d4af37; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Z-TECH GLOBAL SYSTEM</h1>
-        <div class="status-card">
-            <p><strong>สถานะระบบ:</strong> <span style="color: #00ff00;">ONLINE</span></p>
-            <p><strong>หน่วยงาน:</strong> บริหารจัดการคลังสินค้าส่วนกลาง</p>
-        </div>
-
+        <h1>🌑 Z-TECH IMPERIAL VAULT 🌑</h1>
         <table>
             <thead>
                 <tr>
                     <th>รหัสสินค้า (SKU)</th>
-                    <th>รายการสินค้า</th>
-                    <th>น้ำหนักสุทธิ (กรัม)</th>
-                    <th>สถานะ</th>
+                    <th>สายพันธุ์ (Strain)</th>
+                    <th>ประเภท</th>
+                    <th>เกรด</th>
+                    <th>น้ำหนัก (กรัม)</th>
                 </tr>
             </thead>
             <tbody id="product-list">
-                <tr><td colspan="4" style="text-align:center;">กำลังเรียกข้อมูลจากฐานข้อมูล...</td></tr>
+                <tr><td colspan="5" style="text-align:center; padding: 20px;">กำลังเปิดประตูคลังแห่งความมืด...</td></tr>
             </tbody>
         </table>
     </div>
 
     <script>
-        // เชื่อมต่อกับฐานข้อมูล (กุญแจของบอส)
+        // กุญแจหน้าบ้าน (Publishable Key) ปลอดภัย 100%
         const supabaseUrl = 'https://zwpagcqoopvinufsgluc.supabase.co';
-        const supabaseKey = 'sb_publishable_mirbWPp7tEPi5YiTFPnSSw_BZsKkfLa'; // ใช้ตัว Publishable Key เพื่อความปลอดภัยหน้าบ้าน
+        const supabaseKey = 'sb_publishable_mirbWPp7tEPi5YiTFPnSSw_BZsKkfLa'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         async function loadInventory() {
-            const { data, error } = await _supabase.from('products').select('*');
+            // ดึงข้อมูลจากตารางใหม่ล่าสุด
+            const { data, error } = await _supabase.from('ztech_inventory').select('*').order('last_updated', { ascending: false });
             const list = document.getElementById('product-list');
             
-            if (data) {
+            if (error) {
+                list.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ff4444;">❌ ขัดข้อง: ${error.message}</td></tr>`;
+                return;
+            }
+
+            if (data && data.length > 0) {
                 list.innerHTML = data.map(item => `
                     <tr>
-                        <td><strong>${item.sku}</strong></td>
-                        <td>${item.name}</td>
-                        <td style="color: #d4af37;">${item.stock_weight} g</td>
-                        <td><span class="badge">พร้อมจำหน่าย</span></td>
+                        <td style="color: #fff; font-family: monospace; font-size: 16px;">${item.sku}</td>
+                        <td>${item.strain_name}</td>
+                        <td>${item.category}</td>
+                        <td><span class="badge">${item.grade}</span></td>
+                        <td style="color: #d4af37; font-weight: bold; font-size: 16px;">${item.stock_weight} g</td>
                     </tr>
                 `).join('');
+            } else {
+                list.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; color: #666;">คลังสินค้าว่างเปล่า... รอการรับเข้าจากจอมมาร</td></tr>`;
             }
         }
         loadInventory();
