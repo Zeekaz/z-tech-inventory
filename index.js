@@ -7,7 +7,7 @@ const axios = require('axios');
 const app = express();
 app.use(express.json());
 
-// ทำให้เซิร์ฟเวอร์เปิดหน้าเว็บ dashboard.html ที่บอสมีอยู่ได้
+// ทำให้เซิร์ฟเวอร์เปิดหน้าเว็บ dashboard.html และไฟล์อื่นๆ ที่บอสมีอยู่ได้
 app.use(express.static(path.join(__dirname))); 
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -17,7 +17,7 @@ const LIFF_ID = "2009261202-Jruo3vhw";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 1. หูฟังแชท LINE (Webhook) - กลับมาแล้วค่ะ!
+// 1. หูฟังแชท LINE (Webhook)
 app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
     const events = req.body.events;
@@ -47,7 +47,7 @@ async function reply(token, msg) {
     } catch (e) { console.log("❌ Reply Error:", e.response ? e.response.data : e.message); }
 }
 
-// 2. สมองกลประมวลผลการสแกนเข้า-ออก
+// 2. สมองกลประมวลผลการสแกนเข้า-ออก (รองรับทศนิยม)
 app.post('/api/scan', async (req, res) => {
     const { barcode, action, weight, user } = req.body; 
 
@@ -71,8 +71,10 @@ app.post('/api/scan', async (req, res) => {
         newWeight -= change;
     }
 
+    // อัปเดตยอดคงเหลือ
     await supabase.from('ztech_inventory').update({ stock_weight: newWeight, last_updated: new Date() }).eq('sku', barcode);
     
+    // บันทึกประวัติ (Log)
     await supabase.from('ztech_logs').insert([{ 
         sku: barcode, 
         action_type: action.toUpperCase(), 
@@ -94,7 +96,7 @@ app.get('/scan', (req, res) => {
         
         <div id="input-section" style="display:none; margin-top:30px; padding:20px; background:#111; border-radius:10px; border:1px solid #d4af37;">
             <h3 id="scan-result" style="color:#fff; word-break: break-all;"></h3>
-            <input type="number" id="weight-input" placeholder="ใส่น้ำหนัก (กรัม)" style="padding:15px; width:90%; font-size:18px; text-align:center; border-radius:5px; border:1px solid #d4af37; background:#222; color:#fff; margin-bottom:20px;">
+            <input type="number" step="any" id="weight-input" placeholder="ใส่น้ำหนัก (กรัม)" style="padding:15px; width:90%; font-size:18px; text-align:center; border-radius:5px; border:1px solid #d4af37; background:#222; color:#fff; margin-bottom:20px;">
             <br>
             <button onclick="submitData()" style="padding:15px; width:90%; background:#d4af37; color:#000; font-size:18px; font-weight:bold; border:none; border-radius:5px; cursor:pointer;">ยืนยันรายการ</button>
         </div>
