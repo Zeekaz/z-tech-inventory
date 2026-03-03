@@ -15,39 +15,21 @@
         td { padding: 12px; border-bottom: 1px solid #222; font-size: 15px; }
         .badge { background: #333; color: #d4af37; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; border: 1px solid #d4af37; }
         
-        /* สไตล์ปุ่มสร้าง QR Code และปุ่ม Log */
-        .btn-create {
-            display: inline-block; 
-            padding: 12px 24px; 
-            background: #d4af37; 
-            color: #000; 
-            text-decoration: none; 
-            font-weight: bold; 
-            font-size: 16px; 
-            border-radius: 5px; 
-            border: 2px solid #b5952f; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
-            transition: all 0.3s ease;
-        }
-        .btn-create:hover { background: #b5952f; transform: scale(1.02); }
+        .btn-create { display: inline-block; padding: 12px 24px; background: #d4af37; color: #000; text-decoration: none; font-weight: bold; font-size: 16px; border-radius: 5px; border: 2px solid #b5952f; cursor: pointer; }
+        .btn-create:hover { background: #b5952f; }
+        
+        /* ปุ่มดูคิวอาร์โค้ดย่อย */
+        .btn-qr { background: #222; color: #d4af37; border: 1px solid #d4af37; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-qr:hover { background: #d4af37; color: #000; }
 
-        /* สไตล์ช่องค้นหาและตัวกรอง */
-        .filter-section {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .filter-input {
-            flex: 1;
-            min-width: 150px;
-            padding: 10px;
-            background: #222;
-            border: 1px solid #444;
-            color: white;
-            border-radius: 4px;
-            font-size: 15px;
-        }
+        .filter-section { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-input { flex: 1; min-width: 150px; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; font-size: 15px; }
+
+        /* Modal Popup สำหรับ QR Code */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); }
+        .modal-content { background-color: #111; margin: 10% auto; padding: 30px; border: 2px solid #d4af37; width: 320px; text-align: center; border-radius: 10px; box-shadow: 0 0 30px rgba(212, 175, 55, 0.2); }
+        .close { color: #888; float: right; font-size: 28px; font-weight: bold; cursor: pointer; margin-top: -15px; margin-right: -10px; }
+        .close:hover { color: #ff4444; }
     </style>
 </head>
 <body>
@@ -55,12 +37,8 @@
         <h1>🌑 Z-TECH IMPERIAL VAULT 🌑</h1>
         
         <div style="text-align: center; margin-bottom: 30px; display: flex; justify-content: center; gap: 15px;">
-            <button onclick="checkAdmin('manage')" class="btn-create" style="cursor: pointer;">
-                🔒 สร้างสายพันธุ์ใหม่
-            </button>
-            <button onclick="checkAdmin('log')" class="btn-create" style="cursor: pointer; background: #8b0000; border-color: #550000; color: white;">
-                👁️ ตรวจสอบประวัติ (Log)
-            </button>
+            <button onclick="checkAdmin('manage')" class="btn-create">🔒 สร้างสายพันธุ์ใหม่</button>
+            <button onclick="checkAdmin('log')" class="btn-create" style="background: #8b0000; border-color: #550000; color: white;">👁️ ตรวจสอบประวัติ</button>
         </div>
 
         <div class="filter-section">
@@ -76,9 +54,6 @@
                 <option value="TOP">TOP</option>
                 <option value="Mid">Mid</option>
                 <option value="Pop">Pop</option>
-                <option value="Minipop">Minipop</option>
-                <option value="Mixed">Mixed</option>
-                <option value="Reject">ตีกลับ (Reject)</option>
             </select>
         </div>
 
@@ -90,35 +65,48 @@
                     <th>ประเภท</th>
                     <th>เกรด</th>
                     <th>น้ำหนัก (กรัม)</th>
+                    <th style="text-align:center;">คิวอาร์โค้ด</th>
                 </tr>
             </thead>
             <tbody id="product-list">
-                <tr><td colspan="5" style="text-align:center; padding: 20px;">กำลังเปิดประตูคลังแห่งความมืด...</td></tr>
+                <tr><td colspan="6" style="text-align:center; padding: 20px;">กำลังเปิดประตูคลังแห่งความมืด...</td></tr>
             </tbody>
         </table>
+    </div>
+
+    <div id="qrModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeQR()">&times;</span>
+            <h2 id="modalStrain" style="color:#d4af37; margin-top:0;"></h2>
+            <p id="modalSku" style="font-family: monospace; color:#aaa; font-size: 18px;"></p>
+            <div style="background: white; padding: 15px; display: inline-block; border-radius: 8px; margin: 15px 0;">
+                <img id="modalQrImg" src="" alt="QR Code" style="display:block;">
+            </div>
+            <br>
+            <button onclick="printQR()" style="padding: 12px 24px; background:#d4af37; color:#000; border:none; border-radius:4px; cursor:pointer; font-weight:bold; font-size:16px; width:100%;">🖨️ พิมพ์ QR Code ซ้ำ</button>
+        </div>
     </div>
 
     <script>
         const supabaseUrl = 'https://zwpagcqoopvinufsgluc.supabase.co';
         const supabaseKey = 'sb_publishable_mirbWPp7tEPi5YiTFPnSSw_BZsKkfLa'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-        let allProducts = []; // เก็บข้อมูลทั้งหมดไว้ในสมองส่วนหน้า เพื่อให้ค้นหาได้ไวที่สุด
+        let allProducts = [];
 
         async function loadInventory() {
             const { data, error } = await _supabase.from('ztech_inventory').select('*').order('last_updated', { ascending: false });
             const list = document.getElementById('product-list');
             
             if (error) {
-                list.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ff4444;">❌ ขัดข้อง: ${error.message}</td></tr>`;
+                list.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ff4444;">❌ ขัดข้อง: ${error.message}</td></tr>`;
                 return;
             }
 
             if (data && data.length > 0) {
-                allProducts = data; // บันทึกข้อมูลลงตัวแปร
-                renderTable(allProducts); // วาดตาราง
+                allProducts = data; 
+                renderTable(allProducts); 
             } else {
-                list.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; color: #666;">คลังสินค้าว่างเปล่า... รอการรับเข้าจากจอมมาร</td></tr>`;
+                list.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 30px; color: #666;">คลังสินค้าว่างเปล่า...</td></tr>`;
             }
         }
 
@@ -132,14 +120,14 @@
                         <td>${item.category}</td>
                         <td><span class="badge">${item.grade}</span></td>
                         <td style="color: #d4af37; font-weight: bold; font-size: 16px;">${item.stock_weight} g</td>
+                        <td style="text-align:center;"><button onclick="openQR('${item.sku}', '${item.strain_name}', '${item.grade}')" class="btn-qr">🔳 ดู QR</button></td>
                     </tr>
                 `).join('');
             } else {
-                list.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #666;">-- ไม่พบสายพันธุ์ที่ค้นหา --</td></tr>`;
+                list.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px; color: #666;">-- ไม่พบสายพันธุ์ที่ค้นหา --</td></tr>`;
             }
         }
 
-        // ฟังก์ชันกรองข้อมูลแบบเรียลไทม์
         function filterTable() {
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             const categoryTerm = document.getElementById('category-filter').value;
@@ -149,16 +137,11 @@
                 const matchSearch = item.strain_name.toLowerCase().includes(searchTerm) || item.sku.toLowerCase().includes(searchTerm);
                 const matchCategory = categoryTerm === "" || item.category === categoryTerm;
                 const matchGrade = gradeTerm === "" || item.grade === gradeTerm;
-                
                 return matchSearch && matchCategory && matchGrade;
             });
-
             renderTable(filteredData);
         }
 
-        loadInventory();
-
-        // ระบบล็อคประตูห้องนิรภัยแบบระบุหน้า
         function checkAdmin(targetPage) {
             let pass = prompt("🌑 ระบบสงวนสิทธิ์เฉพาะผู้บริหาร กรุณาใส่รหัสผ่าน:");
             if (pass === "0420") {
@@ -168,6 +151,37 @@
                 alert("❌ รหัสผ่านไม่ถูกต้อง! คุณไม่มีสิทธิ์เข้าถึงส่วนนี้ค่ะ");
             }
         }
+
+        // ระบบจัดการ QR Code แบบ Popup
+        function openQR(sku, strain, grade) {
+            document.getElementById('modalStrain').innerText = strain + " (" + grade + ")";
+            document.getElementById('modalSku').innerText = sku;
+            document.getElementById('modalQrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${sku}`;
+            document.getElementById('qrModal').style.display = 'block';
+        }
+
+        function closeQR() {
+            document.getElementById('qrModal').style.display = 'none';
+        }
+
+        function printQR() {
+            let imgSrc = document.getElementById('modalQrImg').src;
+            let title = document.getElementById('modalStrain').innerText;
+            let sku = document.getElementById('modalSku').innerText;
+            let printWindow = window.open('', '', 'width=600,height=600');
+            printWindow.document.write(`
+                <html>
+                <body style="text-align:center; font-family:sans-serif; margin-top:50px;">
+                    <h2 style="margin-bottom: 5px;">${title}</h2>
+                    <p style="font-family:monospace; font-size:18px; margin-top:0;">${sku}</p>
+                    <img src="${imgSrc}" style="width:200px; height:200px; border:2px solid #000; padding:10px;">
+                    <script>setTimeout(() => { window.print(); window.close(); }, 500);<\/script>
+                </body>
+                </html>
+            `);
+        }
+
+        loadInventory();
     </script>
 </body>
 </html>
