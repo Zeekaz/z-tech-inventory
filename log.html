@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Z-Tech Global | Security Logs</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background-color: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 8px; background: #111; box-shadow: 0 0 20px rgba(0,0,0,0.8); border-top: 4px solid #8b0000; }
+        h1 { color: #ff4444; text-align: center; font-size: 24px; letter-spacing: 2px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { border-bottom: 2px solid #8b0000; padding: 12px; text-align: left; color: #ff4444; font-size: 16px; }
+        td { padding: 12px; border-bottom: 1px solid #222; font-size: 15px; }
+        .in { color: #4CAF50; font-weight: bold; }
+        .out { color: #ff4444; font-weight: bold; }
+        .btn-back { display: inline-block; padding: 10px 20px; background: #333; color: #d4af37; text-decoration: none; border-radius: 5px; margin-bottom: 20px; border: 1px solid #d4af37; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="dashboard.html" class="btn-back">⬅ กลับหน้าคลังสินค้าหลัก</a>
+        <h1>🩸 Z-TECH SECURITY LOGS 🩸</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>วัน-เวลา</th>
+                    <th>รหัส (SKU)</th>
+                    <th>แอคชัน</th>
+                    <th>จำนวน (กรัม)</th>
+                    <th>ผู้ทำรายการ</th>
+                </tr>
+            </thead>
+            <tbody id="log-list">
+                <tr><td colspan="5" style="text-align:center; padding: 20px;">กำลังดึงข้อมูลจากเงามืด...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://zwpagcqoopvinufsgluc.supabase.co';
+        const supabaseKey = 'sb_publishable_mirbWPp7tEPi5YiTFPnSSw_BZsKkfLa'; 
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function loadLogs() {
+            // ดึงข้อมูลประวัติล่าสุด 50 รายการ
+            const { data, error } = await _supabase.from('ztech_logs').select('*').order('created_at', { ascending: false }).limit(50);
+            const list = document.getElementById('log-list');
+            
+            if (error) {
+                list.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ff4444;">❌ ขัดข้อง: ${error.message}</td></tr>`;
+                return;
+            }
+
+            if (data && data.length > 0) {
+                list.innerHTML = data.map(item => {
+                    let date = new Date(item.created_at).toLocaleString('th-TH');
+                    let actionClass = item.action_type === 'IN' ? 'in' : 'out';
+                    let actionText = item.action_type === 'IN' ? '📥 รับเข้า' : '📤 จ่ายออก';
+                    
+                    return `
+                    <tr>
+                        <td style="color: #888; font-size: 14px;">${date}</td>
+                        <td style="color: #fff; font-family: monospace;">${item.sku}</td>
+                        <td class="${actionClass}">${actionText}</td>
+                        <td style="font-weight: bold;">${item.weight_change} g</td>
+                        <td style="color: #d4af37;">${item.performed_by || 'Staff'}</td>
+                    </tr>
+                    `;
+                }).join('');
+            } else {
+                list.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; color: #666;">คลังเก็บประวัติยังว่างเปล่าค่ะ</td></tr>`;
+            }
+        }
+        loadLogs();
+    </script>
+</body>
+</html>
