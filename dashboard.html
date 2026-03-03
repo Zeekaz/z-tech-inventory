@@ -30,6 +30,24 @@
             transition: all 0.3s ease;
         }
         .btn-create:hover { background: #b5952f; transform: scale(1.02); }
+
+        /* สไตล์ช่องค้นหาและตัวกรอง */
+        .filter-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .filter-input {
+            flex: 1;
+            min-width: 150px;
+            padding: 10px;
+            background: #222;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+            font-size: 15px;
+        }
     </style>
 </head>
 <body>
@@ -40,6 +58,25 @@
             <button onclick="checkAdmin()" class="btn-create" style="cursor: pointer;">
                 🔒 สร้างสายพันธุ์ใหม่ & ออก QR Code
             </button>
+        </div>
+
+        <div class="filter-section">
+            <input type="text" id="search-input" class="filter-input" placeholder="🔍 ค้นหาสายพันธุ์ หรือ รหัส SKU..." onkeyup="filterTable()">
+            <select id="category-filter" class="filter-input" onchange="filterTable()" style="flex: 0.5;">
+                <option value="">-- ทุกประเภท --</option>
+                <option value="ดอก">ดอก (Flower)</option>
+                <option value="ผง">ผง (Kief/Shake)</option>
+                <option value="ใบทริม">ใบทริม (Trim)</option>
+            </select>
+            <select id="grade-filter" class="filter-input" onchange="filterTable()" style="flex: 0.5;">
+                <option value="">-- ทุกเกรด --</option>
+                <option value="TOP">TOP</option>
+                <option value="Mid">Mid</option>
+                <option value="Pop">Pop</option>
+                <option value="Minipop">Minipop</option>
+                <option value="Mixed">Mixed</option>
+                <option value="Reject">ตีกลับ (Reject)</option>
+            </select>
         </div>
 
         <table>
@@ -59,13 +96,13 @@
     </div>
 
     <script>
-        // กุญแจหน้าบ้าน (Publishable Key) ปลอดภัย 100%
         const supabaseUrl = 'https://zwpagcqoopvinufsgluc.supabase.co';
         const supabaseKey = 'sb_publishable_mirbWPp7tEPi5YiTFPnSSw_BZsKkfLa'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        let allProducts = []; // เก็บข้อมูลทั้งหมดไว้ในสมองส่วนหน้า เพื่อให้ค้นหาได้ไวที่สุด
+
         async function loadInventory() {
-            // ดึงข้อมูลจากตารางใหม่ล่าสุด
             const { data, error } = await _supabase.from('ztech_inventory').select('*').order('last_updated', { ascending: false });
             const list = document.getElementById('product-list');
             
@@ -75,7 +112,17 @@
             }
 
             if (data && data.length > 0) {
-                list.innerHTML = data.map(item => `
+                allProducts = data; // บันทึกข้อมูลลงตัวแปร
+                renderTable(allProducts); // วาดตาราง
+            } else {
+                list.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; color: #666;">คลังสินค้าว่างเปล่า... รอการรับเข้าจากจอมมาร</td></tr>`;
+            }
+        }
+
+        function renderTable(dataToRender) {
+            const list = document.getElementById('product-list');
+            if (dataToRender.length > 0) {
+                list.innerHTML = dataToRender.map(item => `
                     <tr>
                         <td style="color: #fff; font-family: monospace; font-size: 16px;">${item.sku}</td>
                         <td>${item.strain_name}</td>
@@ -85,9 +132,27 @@
                     </tr>
                 `).join('');
             } else {
-                list.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; color: #666;">คลังสินค้าว่างเปล่า... รอการรับเข้าจากจอมมาร</td></tr>`;
+                list.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #666;">-- ไม่พบสายพันธุ์ที่ค้นหา --</td></tr>`;
             }
         }
+
+        // ฟังก์ชันกรองข้อมูลแบบเรียลไทม์
+        function filterTable() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const categoryTerm = document.getElementById('category-filter').value;
+            const gradeTerm = document.getElementById('grade-filter').value;
+
+            const filteredData = allProducts.filter(item => {
+                const matchSearch = item.strain_name.toLowerCase().includes(searchTerm) || item.sku.toLowerCase().includes(searchTerm);
+                const matchCategory = categoryTerm === "" || item.category === categoryTerm;
+                const matchGrade = gradeTerm === "" || item.grade === gradeTerm;
+                
+                return matchSearch && matchCategory && matchGrade;
+            });
+
+            renderTable(filteredData);
+        }
+
         loadInventory();
 
         // ระบบล็อคประตูห้องนิรภัย
