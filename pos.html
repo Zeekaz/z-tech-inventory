@@ -71,7 +71,7 @@
             <div class="flex justify-between text-lg font-bold items-end mt-2">
                 <span class="text-goldDark">ยอดเก็บเงินสุทธิ:</span>
                 <div class="text-right">
-                    <div id="tier-badge" class="text-xs text-gray-500 mb-1">Retail Price</div>
+                    <div id="tier-badge" class="text-xs text-gray-500 mb-1">ราคาปลีก (Retail)</div>
                     <span id="total-price" class="text-white text-3xl transition-colors duration-300">฿0.00</span>
                 </div>
             </div>
@@ -88,7 +88,7 @@
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
         
         let cart = []; 
-        let specialDiscount = 0; // ตัวแปรเก็บส่วนลด
+        let specialDiscount = 0;
 
         async function loadImperialVault() {
             const grid = document.getElementById('product-grid');
@@ -115,14 +115,16 @@
                     
                     let imgDisplay = item.image_url 
                         ? `<img src="${item.image_url}" class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">` 
-                        : `<span class="text-gray-600 font-bold uppercase tracking-widest">${item.category || 'HYBRID'}</span>`;
+                        : `<span class="text-gray-600 font-bold uppercase tracking-widest">${item.category || 'ITEM'}</span>`;
+
+                    let gradeDisplay = item.grade && item.grade !== '-' ? `<div class="absolute top-2 right-2 bg-gothicPurple text-xs px-2 py-1 rounded text-white">${item.grade}</div>` : '';
 
                     const cardHTML = `
                         <div class="bg-gray-900 rounded-lg p-4 cursor-pointer purple-glow transition-all duration-300 border border-gray-800" 
                              onclick="addToCart('${item.strain_name}', ${basePrice}, ${tier1Price}, ${tier2Price}, ${item.stock_weight}, '${item.sku}')">
                             <div class="h-32 bg-black rounded border border-gray-700 mb-3 flex items-center justify-center overflow-hidden relative">
                                 ${imgDisplay}
-                                <div class="absolute top-2 right-2 bg-gothicPurple text-xs px-2 py-1 rounded text-white">${item.grade || 'A'}</div>
+                                ${gradeDisplay}
                             </div>
                             <h2 class="text-lg font-bold text-white mb-1">${item.strain_name}</h2>
                             <div class="flex justify-between text-sm text-gray-400 mb-2">
@@ -140,9 +142,10 @@
 
         function addToCart(name, base, t1, t2, stock, sku) {
             if (stock <= 0) {
-                alert(`⚠️ พลังเวทย์ขัดข้อง: [${name}] ไม่มีสินค้าในคลังค่ะ`);
+                alert(`⚠️ สินค้าหมด: [${name}] ไม่มีสินค้าในคลังค่ะ`);
                 return;
             }
+
             let existingItem = cart.find(item => item.name === name);
             if (existingItem) {
                 alert(`⚠️ มี [${name}] ในตะกร้าแล้วค่ะ กรุณาปรับจำนวนน้ำหนักที่ตะกร้าด้านขวาได้เลย`);
@@ -188,12 +191,14 @@
         function updateWeight(index, value) {
             let w = parseFloat(value);
             if (isNaN(w) || w < 0) w = 0;
+            
             if (w > cart[index].stock) {
-                alert(`⚠️ พลังเวทย์ไม่พอ! สต๊อก ${cart[index].name} มีเพียง ${cart[index].stock}g ค่ะ`);
+                alert(`⚠️ สินค้าไม่พอ! สต๊อก ${cart[index].name} มีเพียง ${cart[index].stock}g ค่ะ`);
                 w = cart[index].stock;
                 renderCart(); 
                 return;
             }
+            
             cart[index].weight = w;
             calculateTotals();
         }
@@ -203,10 +208,9 @@
             renderCart();
         }
 
-        // 🌑 ฟังก์ชันตรวจสอบรหัสผ่านก่อนให้ส่วนลด
         function promptDiscount() {
             let pin = prompt("🌑 ระบบป้องกันการทุจริต: กรุณาใส่รหัสผ่านผู้จัดการเพื่อมอบส่วนลด");
-            if (pin === null) return; // กดยกเลิก
+            if (pin === null) return; 
             
             if (pin !== "0420") {
                 alert("❌ รหัสผ่านไม่ถูกต้อง! คุณไม่มีสิทธิ์อนุมัติส่วนลดค่ะ");
@@ -228,18 +232,18 @@
 
         function calculateTotals() {
             let totalWeight = cart.reduce((sum, item) => sum + item.weight, 0);
-            let subtotalPrice = 0; // ยอดก่อนลด
+            let subtotalPrice = 0;
             
-            let activeTier = "Retail Price";
+            let activeTier = "ราคาปลีก (Retail)";
             let activeColor = "text-white";
             let boxBorder = "border-gray-800";
 
             if (totalWeight >= 1000) {
-                activeTier = "👑 DISTRIBUTOR TIER (1000g+)";
+                activeTier = "👑 เรทราคาส่ง 1 กิโลกรัม (1KG+)";
                 activeColor = "text-neonGreen";
                 boxBorder = "border-neonGreen";
             } else if (totalWeight >= 100) {
-                activeTier = "⚜️ WHOLESALE TIER (100g+)";
+                activeTier = "⚖️ เรทราคาส่ง 1 ขีด (100g+)";
                 activeColor = "text-goldDark";
                 boxBorder = "border-goldDark";
             }
@@ -258,11 +262,9 @@
                 }
             });
 
-            // ป้องกันส่วนลดเกินราคาสินค้า
             if (specialDiscount > subtotalPrice) specialDiscount = subtotalPrice;
             let finalPrice = subtotalPrice - specialDiscount;
 
-            // แสดงผล UI
             document.getElementById('total-grams').innerText = `${totalWeight.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})} g`;
             document.getElementById('subtotal-price').innerText = `฿${subtotalPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
             document.getElementById('discount-display').innerText = `- ฿${specialDiscount.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
@@ -309,7 +311,7 @@
                     body: JSON.stringify({ to: userId, messages: [{ type: 'text', text: msgText }] })
                 });
             } catch (error) {
-                console.warn("เวทมนตร์ส่งข้อความขัดข้อง:", error);
+                console.warn("ระบบส่งข้อความขัดข้อง:", error);
             }
         }
 
@@ -321,12 +323,11 @@
             if(validCart.length === 0) return alert("⚠️ ตะกร้าว่างเปล่า หรือยังไม่ได้ระบุน้ำหนักค่ะ!");
 
             const btn = document.getElementById('checkout-btn');
-            btn.innerHTML = "🔮 กำลังร่ายเวทมนตร์ตัดสต๊อกและส่งสลิป...";
+            btn.innerHTML = "⏳ กำลังบันทึกข้อมูลและส่งสลิป...";
             btn.disabled = true;
             btn.classList.add('opacity-50', 'cursor-not-allowed');
 
             try {
-                // 1. วนลูปตัดสต๊อกและเก็บ Log
                 for (let item of validCart) {
                     let newStock = item.stock - item.weight;
                     const { error: updateErr } = await _supabase.from('ztech_inventory').update({ stock_weight: newStock }).eq('strain_name', item.name);
@@ -338,7 +339,6 @@
                     if (logErr) console.warn("ระบบ Log ขัดข้อง:", logErr);
                 }
 
-                // 2. คำนวณยอด
                 let totalW = validCart.reduce((sum, item) => sum + item.weight, 0);
                 let subtotalP = 0;
                 validCart.forEach(item => {
@@ -351,22 +351,19 @@
                 let finalP = subtotalP - specialDiscount;
                 if (finalP < 0) finalP = 0;
 
-                // 3. บันทึกบิลก้อนใหญ่ลง ztech_orders (พร้อมส่วนลด)
                 const { error: orderErr } = await _supabase.from('ztech_orders').insert([{
                     cart_items: validCart,
                     total_weight: totalW,
                     seller_name: customer,
-                    discount_amount: specialDiscount, // เซฟส่วนลด
-                    net_price: finalP // เซฟยอดรับเงินจริง
+                    discount_amount: specialDiscount, 
+                    net_price: finalP 
                 }]);
                 if (orderErr) console.warn("ระบบบันทึกบิลรวมขัดข้อง:", orderErr);
 
-                // 4. ยิงสลิปเข้า LINE
                 await sendGothicSlip(customer, validCart, totalW, subtotalP, finalP, specialDiscount);
 
-                alert(`🩸 ปิดการขายให้ [${customer}] สำเร็จ!\nเวทมนตร์ได้ตัดสต๊อกและส่งสลิปเข้า LINE เรียบร้อยแล้วค่ะ`);
+                alert(`🩸 ปิดการขายให้ [${customer}] สำเร็จ!\nข้อมูลตัดสต๊อกและส่งสลิปเข้า LINE เรียบร้อยแล้วค่ะ`);
 
-                // เคลียร์ระบบเตรียมขายบิลต่อไป
                 cart = [];
                 specialDiscount = 0;
                 document.getElementById('customer-name').value = '';
@@ -375,7 +372,7 @@
 
             } catch (error) {
                 console.error("Error:", error);
-                alert("❌ เวทมนตร์ขัดข้อง: " + error.message);
+                alert("❌ ระบบขัดข้อง: " + error.message);
             } finally {
                 btn.innerHTML = "🩸 ยืนยันคำสั่งซื้อ (ตัดสต๊อกและยิงสลิป)";
                 btn.disabled = false;
