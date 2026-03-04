@@ -8,11 +8,11 @@
     <style>
         /* Gothic Dark Theme */
         body { background-color: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 8px; background: #111; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .container { max-width: 1050px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 8px; background: #111; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
         h1 { color: #d4af37; text-align: center; font-size: 26px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { border-bottom: 2px solid #d4af37; padding: 12px; text-align: left; color: #d4af37; font-size: 16px; }
-        td { padding: 12px; border-bottom: 1px solid #222; font-size: 15px; }
+        td { padding: 12px; border-bottom: 1px solid #222; font-size: 15px; vertical-align: middle; }
         .badge { background: #333; color: #d4af37; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; border: 1px solid #d4af37; }
         
         .btn-create { display: inline-block; padding: 12px 24px; background: #d4af37; color: #000; text-decoration: none; font-weight: bold; font-size: 16px; border-radius: 5px; border: 2px solid #b5952f; cursor: pointer; transition: 0.2s; }
@@ -40,6 +40,9 @@
         
         .btn-submit { width: 100%; padding: 15px; background: #4a0e4e; color: white; font-size: 18px; font-weight: bold; border: 1px solid #8b008b; border-radius: 5px; cursor: pointer; margin-top: 20px; transition: 0.2s; }
         .btn-submit:hover { background: #6a1b6a; box-shadow: 0 0 15px rgba(139, 0, 139, 0.5); }
+        
+        .thumb-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #d4af37; }
+        .thumb-placeholder { width: 50px; height: 50px; background: #222; border-radius: 4px; border: 1px solid #444; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666; }
     </style>
 </head>
 <body>
@@ -48,7 +51,7 @@
         
         <div style="text-align: center; margin-bottom: 30px; display: flex; justify-content: center; gap: 15px;">
             <button onclick="checkAdmin('manage')" class="btn-create">🔮 ร่ายเวทย์เพิ่มสายพันธุ์ใหม่</button>
-            <button onclick="checkAdmin('log')" class="btn-create" style="background: #8b0000; border-color: #550000; color: white;">👁️ ตรวจสอบประวัติบิล & AI</button>
+            <button onclick="checkAdmin('log')" class="btn-create" style="background: #8b0000; border-color: #550000; color: white;">👁️ ตรวจสอบประวัติบิล & กำไรสุทธิ</button>
         </div>
 
         <div class="filter-section">
@@ -70,6 +73,7 @@
         <table>
             <thead>
                 <tr>
+                    <th>รูปภาพ</th>
                     <th>รหัสสินค้า (SKU)</th>
                     <th>สายพันธุ์ (Strain)</th>
                     <th>ประเภท</th>
@@ -80,7 +84,7 @@
                 </tr>
             </thead>
             <tbody id="product-list">
-                <tr><td colspan="7" style="text-align:center; padding: 20px;">กำลังเปิดประตูคลังแห่งความมืด...</td></tr>
+                <tr><td colspan="8" style="text-align:center; padding: 20px;">กำลังเปิดประตูคลังแห่งความมืด...</td></tr>
             </tbody>
         </table>
     </div>
@@ -188,7 +192,7 @@
             const list = document.getElementById('product-list');
             
             if (error) {
-                list.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#ff4444;">❌ ขัดข้อง: ${error.message}</td></tr>`;
+                list.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#ff4444;">❌ ขัดข้อง: ${error.message}</td></tr>`;
                 return;
             }
 
@@ -196,15 +200,22 @@
                 allProducts = data; 
                 renderTable(allProducts); 
             } else {
-                list.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 30px; color: #666;">คลังสินค้าว่างเปล่า...</td></tr>`;
+                list.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 30px; color: #666;">คลังสินค้าว่างเปล่า...</td></tr>`;
             }
         }
 
         function renderTable(dataToRender) {
             const list = document.getElementById('product-list');
             if (dataToRender.length > 0) {
-                list.innerHTML = dataToRender.map(item => `
+                list.innerHTML = dataToRender.map(item => {
+                    // เช็กว่ามีรูปไหม ถ้าไม่มีให้ขึ้นกล่อง NO IMG ดาร์กๆ
+                    let imgThumb = item.image_url 
+                        ? `<img src="${item.image_url}" class="thumb-img">` 
+                        : `<div class="thumb-placeholder">NO IMG</div>`;
+                        
+                    return `
                     <tr>
+                        <td>${imgThumb}</td>
                         <td style="color: #fff; font-family: monospace; font-size: 16px;">${item.sku}</td>
                         <td style="font-weight: bold;">${item.strain_name}</td>
                         <td>${item.category}</td>
@@ -213,9 +224,10 @@
                         <td style="color: #39ff14; font-weight: bold; font-size: 16px;">${item.stock_weight.toLocaleString()} g</td>
                         <td style="text-align:center;"><button onclick="openQR('${item.sku}', '${item.strain_name}', '${item.grade}')" class="btn-qr">🔳 QR</button></td>
                     </tr>
-                `).join('');
+                    `;
+                }).join('');
             } else {
-                list.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px; color: #666;">-- ไม่พบสายพันธุ์ที่ค้นหา --</td></tr>`;
+                list.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px; color: #666;">-- ไม่พบสายพันธุ์ที่ค้นหา --</td></tr>`;
             }
         }
 
@@ -237,7 +249,7 @@
             let pass = prompt("🌑 ระบบสงวนสิทธิ์เฉพาะผู้บริหาร กรุณาใส่รหัสผ่าน:");
             if (pass === "0420") {
                 if(targetPage === 'manage') openAddModal();
-                if(targetPage === 'log') window.location.href = "log.html"; // เดี๋ยวเราทำหน้านี้รองรับ AI ต่อค่ะ
+                if(targetPage === 'log') window.location.href = "log.html"; 
             } else if (pass !== null && pass !== "") {
                 alert("❌ รหัสผ่านไม่ถูกต้อง! คุณไม่มีสิทธิ์เข้าถึงส่วนนี้ค่ะ");
             }
@@ -289,12 +301,11 @@
                 alert("✅ เพิ่มสายพันธุ์ใหม่ลงคลังสำเร็จแล้วค่ะ!");
                 closeAddModal();
                 
-                // รีเซ็ตฟอร์ม
                 document.querySelectorAll('.form-input').forEach(input => {
                     if(input.id !== 'f_category' && input.id !== 'f_grade' && input.id !== 'f_sku') input.value = '';
                 });
 
-                loadInventory(); // โหลดตารางใหม่
+                loadInventory(); 
 
             } catch (error) {
                 alert("❌ เกิดข้อผิดพลาด: " + error.message);
