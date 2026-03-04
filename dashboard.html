@@ -33,8 +33,9 @@
         /* Form Styles */
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; color: #d4af37; margin-bottom: 5px; font-size: 14px; font-weight: bold; }
-        .form-input { width: 100%; padding: 10px; background: #050505; border: 1px solid #444; color: white; border-radius: 4px; box-sizing: border-box; }
+        .form-input { width: 100%; padding: 10px; background: #050505; border: 1px solid #444; color: white; border-radius: 4px; box-sizing: border-box; transition: 0.3s; }
         .form-input:focus { border-color: #39ff14; outline: none; }
+        .form-input:disabled { opacity: 0.5; cursor: not-allowed; background: #222; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
         
@@ -53,7 +54,7 @@
         <h1>🌑 Z-TECH IMPERIAL VAULT 🌑</h1>
         
         <div style="text-align: center; margin-bottom: 30px; display: flex; justify-content: center; gap: 15px;">
-            <button onclick="checkAdmin('manage')" class="btn-create">🔮 ร่ายเวทย์เพิ่มสายพันธุ์ใหม่</button>
+            <button onclick="checkAdmin('manage')" class="btn-create">➕ เพิ่มรายการสินค้าใหม่</button>
             <button onclick="checkAdmin('log')" class="btn-create" style="background: #8b0000; border-color: #550000; color: white;">👁️ ตรวจสอบประวัติบิล & กำไรสุทธิ</button>
         </div>
 
@@ -67,7 +68,7 @@
             <select id="category-filter" class="filter-input" onchange="filterTable()" style="flex: 0.5;">
                 <option value="">-- ทุกประเภท --</option>
                 <option value="ดอก">ดอก (Flower)</option>
-                <option value="ผง">ผง (Kief/Shake)</option>
+                <option value="ใต้เครื่อง">ใต้เครื่อง (Powder)</option>
                 <option value="ใบทริม">ใบทริม (Trim)</option>
             </select>
             <select id="grade-filter" class="filter-input" onchange="filterTable()" style="flex: 0.5;">
@@ -75,6 +76,10 @@
                 <option value="TOP">TOP</option>
                 <option value="Mid">Mid</option>
                 <option value="Pop">Pop</option>
+                <option value="Mini-pop">Mini-pop</option>
+                <option value="Mixed">Mixed</option>
+                <option value="Other">Other</option>
+                <option value="-">-</option>
             </select>
         </div>
 
@@ -101,7 +106,7 @@
         <div class="modal-content">
             <span class="close" onclick="closeAddModal()">&times;</span>
             <h2 style="color:#d4af37; margin-top:0; text-align:center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">
-                🔮 อาคมสร้างสายพันธุ์ใหม่
+                🌑 เพิ่มรายการสินค้าใหม่ (New Item)
             </h2>
             
             <div class="grid-2">
@@ -110,7 +115,7 @@
                     <input type="text" id="f_sku" class="form-input" readonly style="color: #888; background: #111;">
                 </div>
                 <div class="form-group">
-                    <label>ชื่อสายพันธุ์ (Strain Name)</label>
+                    <label>ชื่อสายพันธุ์ / รายการ (Name)</label>
                     <input type="text" id="f_strain" class="form-input" placeholder="เช่น Z-Core">
                 </div>
             </div>
@@ -118,18 +123,22 @@
             <div class="grid-2">
                 <div class="form-group">
                     <label>ประเภท (Category)</label>
-                    <select id="f_category" class="form-input">
+                    <select id="f_category" class="form-input" onchange="toggleGrade()">
                         <option value="ดอก">ดอก (Flower)</option>
-                        <option value="ผง">ผง (Kief/Shake)</option>
+                        <option value="ใต้เครื่อง">ใต้เครื่อง (Powder)</option>
                         <option value="ใบทริม">ใบทริม (Trim)</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>เกรด (Grade)</label>
+                    <label>เกรด (Grade) - เฉพาะประเภทดอก</label>
                     <select id="f_grade" class="form-input">
-                        <option value="TOP">TOP (AAA+)</option>
-                        <option value="Mid">Mid (AA)</option>
-                        <option value="Pop">Pop (A)</option>
+                        <option value="TOP">TOP</option>
+                        <option value="Mid">Mid</option>
+                        <option value="Pop">Pop</option>
+                        <option value="Mini-pop">Mini-pop</option>
+                        <option value="Mixed">Mixed</option>
+                        <option value="Other">Other</option>
+                        <option value="-">-</option>
                     </select>
                 </div>
             </div>
@@ -154,15 +163,15 @@
 
             <div class="grid-3">
                 <div class="form-group">
-                    <label>ราคาปลีก (Base)</label>
+                    <label>ราคาปลีก (1g)</label>
                     <input type="number" step="any" id="f_base" class="form-input" placeholder="0">
                 </div>
                 <div class="form-group">
-                    <label>ราคาส่ง (Tier 1)</label>
+                    <label>ราคาส่ง 1 ขีด (100g)</label>
                     <input type="number" step="any" id="f_t1" class="form-input" placeholder="0">
                 </div>
                 <div class="form-group">
-                    <label>ราคาส่ง (Tier 2)</label>
+                    <label>ราคาส่ง 1 กิโลฯ (1KG)</label>
                     <input type="number" step="any" id="f_t2" class="form-input" placeholder="0">
                 </div>
             </div>
@@ -172,7 +181,7 @@
                 <input type="number" step="any" id="f_stock" class="form-input" placeholder="0" style="border-color: #39ff14; font-weight: bold;">
             </div>
 
-            <button class="btn-submit" id="save-btn" onclick="saveNewProduct()">🩸 ประทับตราเวทมนตร์ (บันทึกข้อมูล)</button>
+            <button class="btn-submit" id="save-btn" onclick="saveNewProduct()">🩸 บันทึกข้อมูลลงคลัง (Save to Vault)</button>
         </div>
     </div>
 
@@ -194,6 +203,18 @@
         const supabaseKey = 'sb_publishable_mirbWPp7tEPi5YiTFPnSSw_BZsKkfLa'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
         let allProducts = [];
+
+        function toggleGrade() {
+            const cat = document.getElementById('f_category').value;
+            const gradeSelect = document.getElementById('f_grade');
+            if (cat !== 'ดอก') {
+                gradeSelect.value = '-';
+                gradeSelect.disabled = true;
+            } else {
+                gradeSelect.disabled = false;
+                if(gradeSelect.value === '-') gradeSelect.value = 'TOP';
+            }
+        }
 
         async function loadInventory() {
             const { data, error } = await _supabase.from('ztech_inventory').select('*').order('last_updated', { ascending: false });
@@ -240,7 +261,7 @@
                     `;
                 }).join('');
             } else {
-                list.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px; color: #666;">-- ไม่พบสายพันธุ์ที่ค้นหา --</td></tr>`;
+                list.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px; color: #666;">-- ไม่พบรายการที่ค้นหา --</td></tr>`;
             }
         }
 
@@ -282,6 +303,8 @@
 
         function openAddModal() {
             document.getElementById('f_sku').value = generateSKU();
+            document.getElementById('f_category').value = 'ดอก';
+            toggleGrade(); // รีเซ็ตสถานะช่องเกรด
             document.getElementById('addProductModal').style.display = 'block';
         }
 
@@ -302,18 +325,17 @@
             const price_tier2 = parseFloat(document.getElementById('f_t2').value) || 0;
             const stock_weight = parseFloat(document.getElementById('f_stock').value) || 0;
 
-            if(!strain_name) return alert("⚠️ กรุณาระบุชื่อสายพันธุ์ค่ะ");
+            if(!strain_name) return alert("⚠️ กรุณาระบุชื่อรายการ/สายพันธุ์ค่ะ");
 
             const btn = document.getElementById('save-btn');
             const fileInput = document.getElementById('f_image_file');
             const file = fileInput.files[0];
             let finalImageUrl = null;
 
-            btn.innerHTML = "⏳ กำลังร่ายเวทมนตร์อัปโหลดข้อมูล...";
+            btn.innerHTML = "⏳ กำลังอัปโหลดข้อมูลลงคลัง...";
             btn.disabled = true;
 
             try {
-                // 1. ตรวจสอบและอัปโหลดรูปภาพลง Storage ก่อน
                 if (file) {
                     const fileExt = file.name.split('.').pop();
                     const fileName = `item_${Date.now()}.${fileExt}`;
@@ -324,7 +346,6 @@
 
                     if (uploadErr) throw uploadErr;
 
-                    // ดึงลิงก์รูปที่เป็น Public URL ออกมา
                     const { data: publicUrlData } = _supabase.storage
                         .from('ztech_images')
                         .getPublicUrl(fileName);
@@ -332,7 +353,6 @@
                     finalImageUrl = publicUrlData.publicUrl;
                 }
 
-                // 2. บันทึกข้อมูลทั้งหมดลงฐานข้อมูล
                 const { error } = await _supabase.from('ztech_inventory').insert([{
                     sku, strain_name, category, grade, image_url: finalImageUrl, farm_name,
                     cost_price, price_base, price_tier1, price_tier2, stock_weight
@@ -340,10 +360,9 @@
 
                 if (error) throw error;
 
-                alert("✅ เพิ่มสายพันธุ์พร้อมรูปภาพใหม่ลงคลังสำเร็จแล้วค่ะ!");
+                alert("✅ เพิ่มรายการสินค้าใหม่ลงคลังสำเร็จแล้วค่ะ!");
                 closeAddModal();
                 
-                // เคลียร์ฟอร์ม
                 document.querySelectorAll('.form-input').forEach(input => {
                     if(input.id !== 'f_category' && input.id !== 'f_grade' && input.id !== 'f_sku') input.value = '';
                 });
@@ -355,14 +374,15 @@
                 console.error(error);
                 alert("❌ เกิดข้อผิดพลาด: " + error.message);
             } finally {
-                btn.innerHTML = "🩸 ประทับตราเวทมนตร์ (บันทึกข้อมูล)";
+                btn.innerHTML = "🩸 บันทึกข้อมูลลงคลัง (Save to Vault)";
                 btn.disabled = false;
             }
         }
 
         // --- ระบบ QR Code ---
         function openQR(sku, strain, grade) {
-            document.getElementById('modalStrain').innerText = strain + " (" + grade + ")";
+            let gradeText = grade === '-' ? '' : ` (${grade})`;
+            document.getElementById('modalStrain').innerText = strain + gradeText;
             document.getElementById('modalSku').innerText = sku;
             document.getElementById('modalQrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${sku}`;
             document.getElementById('qrModal').style.display = 'block';
