@@ -42,7 +42,10 @@
         .btn-submit:hover { background: #6a1b6a; box-shadow: 0 0 15px rgba(139, 0, 139, 0.5); }
         
         .thumb-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #d4af37; }
-        .thumb-placeholder { width: 50px; height: 50px; background: #222; border-radius: 4px; border: 1px solid #444; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666; }
+        .thumb-placeholder { width: 50px; height: 50px; background: #222; border-radius: 4px; border: 1px solid #444; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666; text-align: center; line-height: 1.2; }
+        
+        input[type="file"]::file-selector-button { background: #4a0e4e; color: white; border: 1px solid #8b008b; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 15px; transition: 0.2s; }
+        input[type="file"]::file-selector-button:hover { background: #6a1b6a; }
     </style>
 </head>
 <body>
@@ -132,8 +135,8 @@
             </div>
 
             <div class="form-group">
-                <label>ลิงก์รูปภาพดาร์กๆ (Image URL - ใส่หรือไม่ใส่ก็ได้)</label>
-                <input type="text" id="f_image" class="form-input" placeholder="https://...">
+                <label>อัปโหลดรูปภาพสินค้า (Image Upload)</label>
+                <input type="file" id="f_image_file" class="form-input" accept="image/*" style="padding: 7px; cursor: pointer;">
             </div>
 
             <h3 style="color:#888; font-size:14px; border-bottom:1px solid #333; padding-bottom:5px; margin-top:20px;">📦 ข้อมูลฟาร์ม & โครงสร้างราคา</h3>
@@ -204,7 +207,6 @@
             if (data && data.length > 0) {
                 allProducts = data; 
                 
-                // ดึงรายชื่อฟาร์มทั้งหมดมาสร้างเป็น Dropdown
                 const farmSelect = document.getElementById('farm-filter');
                 const uniqueFarms = [...new Set(data.map(item => item.farm_name).filter(name => name))];
                 farmSelect.innerHTML = '<option value="">-- ทุกฟาร์ม --</option>' + 
@@ -222,7 +224,7 @@
                 list.innerHTML = dataToRender.map(item => {
                     let imgThumb = item.image_url 
                         ? `<img src="${item.image_url}" class="thumb-img">` 
-                        : `<div class="thumb-placeholder">NO IMG</div>`;
+                        : `<div class="thumb-placeholder">DARK<br>VAULT</div>`;
                         
                     return `
                     <tr>
@@ -273,7 +275,6 @@
             }
         }
 
-        // --- ระบบเพิ่มสินค้าใหม่ ---
         function generateSKU() {
             const randomStr = Math.random().toString(36).substr(2, 6).toUpperCase();
             return `ZT-${randomStr}`;
@@ -293,7 +294,6 @@
             const strain_name = document.getElementById('f_strain').value.trim();
             const category = document.getElementById('f_category').value;
             const grade = document.getElementById('f_grade').value;
-            const image_url = document.getElementById('f_image').value.trim();
             const farm_name = document.getElementById('f_farm').value.trim();
             
             const cost_price = parseFloat(document.getElementById('f_cost').value) || 0;
@@ -305,27 +305,54 @@
             if(!strain_name) return alert("⚠️ กรุณาระบุชื่อสายพันธุ์ค่ะ");
 
             const btn = document.getElementById('save-btn');
-            btn.innerHTML = "⏳ กำลังบันทึกข้อมูล...";
+            const fileInput = document.getElementById('f_image_file');
+            const file = fileInput.files[0];
+            let finalImageUrl = null;
+
+            btn.innerHTML = "⏳ กำลังร่ายเวทมนตร์อัปโหลดข้อมูล...";
             btn.disabled = true;
 
             try {
+                // 1. ตรวจสอบและอัปโหลดรูปภาพลง Storage ก่อน
+                if (file) {
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `item_${Date.now()}.${fileExt}`;
+                    
+                    const { data: uploadData, error: uploadErr } = await _supabase.storage
+                        .from('ztech_images')
+                        .upload(fileName, file);
+
+                    if (uploadErr) throw uploadErr;
+
+                    // ดึงลิงก์รูปที่เป็น Public URL ออกมา
+                    const { data: publicUrlData } = _supabase.storage
+                        .from('ztech_images')
+                        .getPublicUrl(fileName);
+                        
+                    finalImageUrl = publicUrlData.publicUrl;
+                }
+
+                // 2. บันทึกข้อมูลทั้งหมดลงฐานข้อมูล
                 const { error } = await _supabase.from('ztech_inventory').insert([{
-                    sku, strain_name, category, grade, image_url, farm_name,
+                    sku, strain_name, category, grade, image_url: finalImageUrl, farm_name,
                     cost_price, price_base, price_tier1, price_tier2, stock_weight
                 }]);
 
                 if (error) throw error;
 
-                alert("✅ เพิ่มสายพันธุ์ใหม่ลงคลังสำเร็จแล้วค่ะ!");
+                alert("✅ เพิ่มสายพันธุ์พร้อมรูปภาพใหม่ลงคลังสำเร็จแล้วค่ะ!");
                 closeAddModal();
                 
+                // เคลียร์ฟอร์ม
                 document.querySelectorAll('.form-input').forEach(input => {
                     if(input.id !== 'f_category' && input.id !== 'f_grade' && input.id !== 'f_sku') input.value = '';
                 });
+                document.getElementById('f_image_file').value = '';
 
                 loadInventory(); 
 
             } catch (error) {
+                console.error(error);
                 alert("❌ เกิดข้อผิดพลาด: " + error.message);
             } finally {
                 btn.innerHTML = "🩸 ประทับตราเวทมนตร์ (บันทึกข้อมูล)";
