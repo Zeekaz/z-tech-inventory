@@ -67,12 +67,11 @@
         </div>
 
         <button id="checkout-btn" class="w-full bg-gothicPurple hover:bg-purple-900 text-white font-bold py-4 rounded-lg transition-colors border border-purple-500 neon-border tracking-widest text-lg" onclick="checkout()">
-            🩸 ยืนยันคำสั่งซื้อ (ตัดสต๊อกทันที)
+            🩸 ยืนยันคำสั่งซื้อ (ตัดสต๊อกและยิงสลิป)
         </button>
     </div>
 
     <script>
-        // แก้ไขสายไฟ Supabase ให้ถูกต้อง
         const supabaseUrl = 'https://zwpagcqoopvinufsgluc.supabase.co'; 
         const supabaseKey = 'sb_publishable_mirbWPp7tEPi5YiTFPnSSw_BZsKkfLa'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -102,7 +101,6 @@
                     let tier1Price = item.price_tier1 || 400;
                     let tier2Price = item.price_tier2 || 300;
                     
-                    // ดึงรูปลิงก์ ถ้าไม่มีให้ขึ้นโชว์กล่องข้อความ
                     let imgDisplay = item.image_url 
                         ? `<img src="${item.image_url}" class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">` 
                         : `<span class="text-gray-600 font-bold uppercase tracking-widest">${item.category || 'HYBRID'}</span>`;
@@ -153,7 +151,6 @@
 
             cartDiv.innerHTML = '';
             cart.forEach((item, index) => {
-                // แก้ให้รองรับทศนิยม step="any"
                 const itemHTML = `
                 <div class="bg-gray-900 p-4 rounded mb-3 border border-gray-800 tier-upgrade">
                     <div class="flex justify-between items-center mb-2">
@@ -242,6 +239,42 @@
             document.getElementById('summary-box').className = `bg-gray-900 p-5 rounded border ${boxBorder} mb-4 transition-all duration-300 shadow-lg`;
         }
 
+        // 🌑 ฟังก์ชันส่ง Gothic E-Slip เข้า LINE
+        async function sendGothicSlip(customer, cartItems, totalW, totalP) {
+            const token = '2mqUKe/Rb3dM/vKhOPvuXB8ag0eCS7t8ITrg5+NRiTWKXhgeA/aypMOZc5aDDvpufwkkeioOULxPu7/57MGs7Y1HGGfMW7xZd9vQD0lyY5DID8X9dfYv6AYHm3q1vqLDHzsrPO51asEQDb7stjyMSgdB04t89/1O/w1cDnyilFU=';
+            const userId = 'Uc19b3762a40f744f05ad5008751ec275';
+
+            let itemList = cartItems.map(item => `▪️ ${item.name}: ${item.weight}g`).join('\n');
+            
+            let msgText = `🌑 𝖅-𝕿𝖊𝖈𝖍 𝕴𝖒𝖕𝖊𝖗𝖎𝖆𝖑 𝖁𝖆𝖚𝖑𝖙 🌑\n\n` +
+                          `🩸 ยืนยันคำสั่งซื้อ (ตัดสต๊อกแล้ว) 🩸\n` +
+                          `━━━━━━━━━━━━━━\n` +
+                          `👤 ลูกค้า: ${customer}\n` +
+                          `⚖️ น้ำหนักรวม: ${totalW.toLocaleString()} g\n` +
+                          `💰 ยอดรวมสุทธิ: ฿${totalP.toLocaleString(undefined, {minimumFractionDigits: 2})}\n` +
+                          `━━━━━━━━━━━━━━\n` +
+                          `📦 รายการเบิก:\n${itemList}\n\n` +
+                          `⚡ สแกนและอนุมัติโดย Z-Tech System`;
+
+            const url = 'https://corsproxy.io/?' + encodeURIComponent('https://api.line.me/v2/bot/message/push');
+
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        to: userId,
+                        messages: [{ type: 'text', text: msgText }]
+                    })
+                });
+            } catch (error) {
+                console.warn("เวทมนตร์ส่งข้อความขัดข้อง:", error);
+            }
+        }
+
         async function checkout() {
             let customer = document.getElementById('customer-name').value.trim();
             if(!customer) return alert("⚠️ โปรดระบุชื่อลูกค้าค้าส่งก่อนออกบิลค่ะ!");
@@ -250,7 +283,7 @@
             if(validCart.length === 0) return alert("⚠️ ตะกร้าว่างเปล่า หรือยังไม่ได้ระบุน้ำหนักค่ะ!");
 
             const btn = document.getElementById('checkout-btn');
-            btn.innerHTML = "🔮 กำลังร่ายเวทมนตร์ตัดสต๊อก...";
+            btn.innerHTML = "🔮 กำลังร่ายเวทมนตร์ตัดสต๊อกและส่งสลิป...";
             btn.disabled = true;
             btn.classList.add('opacity-50', 'cursor-not-allowed');
 
@@ -278,8 +311,17 @@
                     if (logErr) console.warn("ระบบ Log ขัดข้อง:", logErr);
                 }
 
-                // 2. บันทึกบิลก้อนใหญ่ลง ztech_orders
+                // 2. คำนวณยอดเพื่อส่ง LINE
                 let totalW = validCart.reduce((sum, item) => sum + item.weight, 0);
+                let totalP = 0;
+                validCart.forEach(item => {
+                    let activePrice = item.base;
+                    if (totalW >= 1000) activePrice = item.t2;
+                    else if (totalW >= 100) activePrice = item.t1;
+                    totalP += (activePrice * item.weight);
+                });
+
+                // 3. บันทึกบิลก้อนใหญ่ลง ztech_orders
                 const { error: orderErr } = await _supabase
                     .from('ztech_orders')
                     .insert([{
@@ -290,7 +332,10 @@
                     
                 if (orderErr) console.warn("ระบบบันทึกบิลรวมขัดข้อง:", orderErr);
 
-                alert(`🩸 ปิดการขายให้ [${customer}] สำเร็จ!\nเวทมนตร์ได้ตัดสต๊อกและบันทึกประวัติเข้าสู่ส่วนกลางเรียบร้อยแล้วค่ะ`);
+                // 4. ยิงสลิปเข้า LINE
+                await sendGothicSlip(customer, validCart, totalW, totalP);
+
+                alert(`🩸 ปิดการขายให้ [${customer}] สำเร็จ!\nเวทมนตร์ได้ตัดสต๊อกและส่งสลิปเข้า LINE เรียบร้อยแล้วค่ะ`);
 
                 cart = [];
                 document.getElementById('customer-name').value = '';
@@ -301,7 +346,7 @@
                 console.error("Error:", error);
                 alert("❌ เวทมนตร์ขัดข้อง: " + error.message);
             } finally {
-                btn.innerHTML = "🩸 ยืนยันคำสั่งซื้อ (ตัดสต๊อกทันที)";
+                btn.innerHTML = "🩸 ยืนยันคำสั่งซื้อ (ตัดสต๊อกและยิงสลิป)";
                 btn.disabled = false;
                 btn.classList.remove('opacity-50', 'cursor-not-allowed');
             }
