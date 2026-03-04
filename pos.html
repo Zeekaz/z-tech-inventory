@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Z-Tech | Killer POS Phase 1.5</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#050505',
+                        gothicPurple: '#4a0e4e',
+                        neonGreen: '#39ff14',
+                        goldDark: '#b5952f',
+                        bloodRed: '#8b0000'
+                    },
+                    fontFamily: { sans: ['Segoe UI', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; color: #e0e0e0; }
+        .neon-border { border: 1px solid #39ff14; box-shadow: 0 0 10px rgba(57, 255, 20, 0.2); }
+        .purple-glow:hover { box-shadow: 0 0 15px rgba(74, 14, 78, 0.8); border-color: #4a0e4e; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #4a0e4e; border-radius: 10px; }
+        .tier-upgrade { animation: flash 0.5s ease-in-out; }
+        @keyframes flash { 0% { opacity: 0.5; transform: scale(0.98); } 100% { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <div class="w-2/3 p-6 overflow-y-auto border-r border-gothicPurple">
+        <h1 class="text-3xl font-bold text-goldDark tracking-widest mb-6 uppercase border-b border-gray-800 pb-4">
+            🌑 Z-Tech Imperial Vault
+        </h1>
+        <div class="grid grid-cols-3 gap-6" id="product-grid"></div>
+    </div>
+
+    <div class="w-1/3 p-6 bg-black flex flex-col relative">
+        <h2 class="text-2xl text-neonGreen font-bold mb-4 text-center tracking-wider">🛒 GOTHIC CART</h2>
+        
+        <div class="mb-4">
+            <input type="text" id="customer-name" placeholder="ชื่อร้านค้า/ลูกค้า (จำเป็น)" class="w-full bg-gray-900 border border-gothicPurple text-white p-3 rounded focus:outline-none focus:border-neonGreen transition-colors">
+        </div>
+
+        <div class="flex-grow overflow-y-auto mb-4 border-b border-gray-800 pb-4" id="cart-items">
+            <p class="text-gray-600 text-center mt-10">🕸️ ตะกร้าว่างเปล่า... เลือกสินค้าจากคลังแห่งความมืดด้านซ้าย</p>
+        </div>
+
+        <div class="bg-gray-900 p-5 rounded border border-gray-800 mb-4 transition-all duration-300" id="summary-box">
+            <div class="flex justify-between text-gray-400 mb-2">
+                <span>น้ำหนักรวมสุทธิ:</span>
+                <span id="total-grams" class="text-white font-bold">0 g</span>
+            </div>
+            <div class="flex justify-between text-lg font-bold items-end">
+                <span class="text-goldDark">ยอดรวมสุทธิ:</span>
+                <div class="text-right">
+                    <div id="tier-badge" class="text-xs text-gray-500 mb-1">Retail Price</div>
+                    <span id="total-price" class="text-white text-3xl transition-colors duration-300">฿0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <button id="checkout-btn" class="w-full bg-gothicPurple hover:bg-purple-900 text-white font-bold py-4 rounded-lg transition-colors border border-purple-500 neon-border tracking-widest text-lg" onclick="checkout()">
+            🩸 ยืนยันคำสั่งซื้อ (ตัดสต๊อกทันที)
+        </button>
+    </div>
+
+    <script>
+        // แก้ไขสายไฟ Supabase ให้ถูกต้อง
+        const supabaseUrl = 'https://zwpagcqoopvinufsgluc.supabase.co'; 
+        const supabaseKey = 'sb_publishable_mirbWPp7tEPi5YiTFPnSSw_BZsKkfLa'; 
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        let cart = []; 
+
+        async function loadImperialVault() {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = '<p class="text-gothicPurple animate-pulse col-span-3 text-center tracking-widest">🔮 กำลังเปิดประตูมิติแห่งความมืด...</p>';
+
+            try {
+                const { data, error } = await _supabase
+                    .from('ztech_inventory')
+                    .select('*')
+                    .order('strain_name', { ascending: true });
+
+                if (error) throw error;
+                grid.innerHTML = ''; 
+
+                if(data.length === 0) {
+                    grid.innerHTML = '<p class="text-gray-500 col-span-3 text-center">🕸️ คลังสินค้าว่างเปล่า...</p>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    let basePrice = item.price_base || 500;
+                    let tier1Price = item.price_tier1 || 400;
+                    let tier2Price = item.price_tier2 || 300;
+                    
+                    // ดึงรูปลิงก์ ถ้าไม่มีให้ขึ้นโชว์กล่องข้อความ
+                    let imgDisplay = item.image_url 
+                        ? `<img src="${item.image_url}" class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">` 
+                        : `<span class="text-gray-600 font-bold uppercase tracking-widest">${item.category || 'HYBRID'}</span>`;
+
+                    const cardHTML = `
+                        <div class="bg-gray-900 rounded-lg p-4 cursor-pointer purple-glow transition-all duration-300 border border-gray-800" 
+                             onclick="addToCart('${item.strain_name}', ${basePrice}, ${tier1Price}, ${tier2Price}, ${item.stock_weight}, '${item.sku}')">
+                            <div class="h-32 bg-black rounded border border-gray-700 mb-3 flex items-center justify-center overflow-hidden relative">
+                                ${imgDisplay}
+                                <div class="absolute top-2 right-2 bg-gothicPurple text-xs px-2 py-1 rounded text-white">${item.grade || 'A'}</div>
+                            </div>
+                            <h2 class="text-lg font-bold text-white mb-1">${item.strain_name}</h2>
+                            <div class="flex justify-between text-sm text-gray-400 mb-2">
+                                <span class="text-xs text-gray-500">รหัส: ${item.sku ? item.sku.substring(0, 8) : 'N/A'}</span>
+                                <span class="${item.stock_weight > 0 ? 'text-neonGreen' : 'text-red-500'}">สต๊อก: ${item.stock_weight.toLocaleString()}g</span>
+                            </div>
+                        </div>
+                    `;
+                    grid.insertAdjacentHTML('beforeend', cardHTML);
+                });
+            } catch (error) {
+                grid.innerHTML = '<p class="text-red-500 col-span-3 text-center">⚠️ รอยรั่วในมิติ: ไม่สามารถดึงข้อมูลได้</p>';
+            }
+        }
+
+        function addToCart(name, base, t1, t2, stock, sku) {
+            if (stock <= 0) {
+                alert(`⚠️ พลังเวทย์ขัดข้อง: [${name}] ไม่มีสินค้าในคลังค่ะ`);
+                return;
+            }
+
+            let existingItem = cart.find(item => item.name === name);
+            if (existingItem) {
+                alert(`⚠️ มี [${name}] ในตะกร้าแล้วค่ะ กรุณาปรับจำนวนน้ำหนักที่ตะกร้าด้านขวาได้เลย`);
+                return;
+            }
+            cart.push({ name, base, t1, t2, stock, sku, weight: 0 });
+            renderCart();
+        }
+
+        function renderCart() {
+            const cartDiv = document.getElementById('cart-items');
+            if (cart.length === 0) {
+                cartDiv.innerHTML = '<p class="text-gray-600 text-center mt-10">🕸️ ตะกร้าว่างเปล่า... เลือกสินค้าจากคลังแห่งความมืดด้านซ้าย</p>';
+                calculateTotals();
+                return;
+            }
+
+            cartDiv.innerHTML = '';
+            cart.forEach((item, index) => {
+                // แก้ให้รองรับทศนิยม step="any"
+                const itemHTML = `
+                <div class="bg-gray-900 p-4 rounded mb-3 border border-gray-800 tier-upgrade">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-white">${item.name} <span class="text-xs text-gray-500">(${item.stock}g)</span></span>
+                        <button class="text-red-500 hover:text-red-400 text-sm" onclick="removeFromCart(${index})">✖</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="number" step="any" placeholder="จำนวน (g)" 
+                               class="w-1/2 bg-black border border-gray-700 text-white p-2 rounded text-center focus:border-neonGreen focus:outline-none" 
+                               value="${item.weight || ''}" 
+                               oninput="updateWeight(${index}, this.value)" 
+                               max="${item.stock}">
+                        <div class="w-1/2 bg-black flex flex-col justify-center items-center rounded border border-gray-700">
+                            <span class="text-xs text-gray-500">ราคา/g</span>
+                            <span id="price-display-${index}" class="text-white font-bold">฿${item.base}</span>
+                        </div>
+                    </div>
+                </div>`;
+                cartDiv.insertAdjacentHTML('beforeend', itemHTML);
+            });
+            calculateTotals();
+        }
+
+        function updateWeight(index, value) {
+            let w = parseFloat(value);
+            if (isNaN(w) || w < 0) w = 0;
+            
+            if (w > cart[index].stock) {
+                alert(`⚠️ พลังเวทย์ไม่พอ! สต๊อก ${cart[index].name} มีเพียง ${cart[index].stock}g ค่ะ`);
+                w = cart[index].stock;
+                renderCart(); 
+                return;
+            }
+            
+            cart[index].weight = w;
+            calculateTotals();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        function calculateTotals() {
+            let totalWeight = cart.reduce((sum, item) => sum + item.weight, 0);
+            let totalPrice = 0;
+            
+            let activeTier = "Retail Price";
+            let activeColor = "text-white";
+            let boxBorder = "border-gray-800";
+
+            if (totalWeight >= 1000) {
+                activeTier = "👑 DISTRIBUTOR TIER (1000g+)";
+                activeColor = "text-neonGreen";
+                boxBorder = "border-neonGreen";
+            } else if (totalWeight >= 100) {
+                activeTier = "⚜️ WHOLESALE TIER (100g+)";
+                activeColor = "text-goldDark";
+                boxBorder = "border-goldDark";
+            }
+
+            cart.forEach((item, index) => {
+                let activePrice = item.base;
+                if (totalWeight >= 1000) activePrice = item.t2;
+                else if (totalWeight >= 100) activePrice = item.t1;
+                
+                let itemTotal = activePrice * item.weight;
+                totalPrice += itemTotal;
+                
+                let priceDisplay = document.getElementById(`price-display-${index}`);
+                if (priceDisplay) {
+                    priceDisplay.innerText = `฿${activePrice}`;
+                    priceDisplay.className = `${activeColor} font-bold`;
+                }
+            });
+
+            document.getElementById('total-grams').innerText = `${totalWeight.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})} g`;
+            const totalPriceEl = document.getElementById('total-price');
+            totalPriceEl.innerText = `฿${totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            totalPriceEl.className = `${activeColor} text-3xl transition-colors duration-300`;
+            
+            const badge = document.getElementById('tier-badge');
+            badge.innerText = activeTier;
+            badge.className = `text-xs font-bold mb-1 ${activeColor}`;
+            
+            document.getElementById('summary-box').className = `bg-gray-900 p-5 rounded border ${boxBorder} mb-4 transition-all duration-300 shadow-lg`;
+        }
+
+        async function checkout() {
+            let customer = document.getElementById('customer-name').value.trim();
+            if(!customer) return alert("⚠️ โปรดระบุชื่อลูกค้าค้าส่งก่อนออกบิลค่ะ!");
+            
+            let validCart = cart.filter(item => item.weight > 0);
+            if(validCart.length === 0) return alert("⚠️ ตะกร้าว่างเปล่า หรือยังไม่ได้ระบุน้ำหนักค่ะ!");
+
+            const btn = document.getElementById('checkout-btn');
+            btn.innerHTML = "🔮 กำลังร่ายเวทมนตร์ตัดสต๊อก...";
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            try {
+                // 1. วนลูปตัดสต๊อกและเก็บ Log
+                for (let item of validCart) {
+                    let newStock = item.stock - item.weight;
+
+                    const { error: updateErr } = await _supabase
+                        .from('ztech_inventory')
+                        .update({ stock_weight: newStock })
+                        .eq('strain_name', item.name);
+
+                    if (updateErr) throw updateErr;
+
+                    const { error: logErr } = await _supabase
+                        .from('ztech_logs')
+                        .insert([{
+                            sku: item.sku || 'N/A',
+                            action_type: 'OUT',
+                            weight_change: item.weight,
+                            performed_by: `POS: ${customer}`
+                        }]);
+                        
+                    if (logErr) console.warn("ระบบ Log ขัดข้อง:", logErr);
+                }
+
+                // 2. บันทึกบิลก้อนใหญ่ลง ztech_orders
+                let totalW = validCart.reduce((sum, item) => sum + item.weight, 0);
+                const { error: orderErr } = await _supabase
+                    .from('ztech_orders')
+                    .insert([{
+                        cart_items: validCart,
+                        total_weight: totalW,
+                        seller_name: customer
+                    }]);
+                    
+                if (orderErr) console.warn("ระบบบันทึกบิลรวมขัดข้อง:", orderErr);
+
+                alert(`🩸 ปิดการขายให้ [${customer}] สำเร็จ!\nเวทมนตร์ได้ตัดสต๊อกและบันทึกประวัติเข้าสู่ส่วนกลางเรียบร้อยแล้วค่ะ`);
+
+                cart = [];
+                document.getElementById('customer-name').value = '';
+                renderCart();
+                loadImperialVault(); 
+
+            } catch (error) {
+                console.error("Error:", error);
+                alert("❌ เวทมนตร์ขัดข้อง: " + error.message);
+            } finally {
+                btn.innerHTML = "🩸 ยืนยันคำสั่งซื้อ (ตัดสต๊อกทันที)";
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', loadImperialVault);
+    </script>
+</body>
+</html>
