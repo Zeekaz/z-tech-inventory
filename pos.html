@@ -68,6 +68,9 @@
                     <option value="-">-</option>
                 </select>
             </div>
+            <div id="category-tabs" class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide pt-1">
+                <button onclick="setCategory('All')" id="btn-cat-All" class="px-4 py-1 rounded-full text-sm font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors">ทั้งหมด</button>
+            </div>
         </div>
 
         <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 flex-grow overflow-y-auto content-start" id="product-grid"></div>
@@ -130,6 +133,7 @@
         let cart = []; 
         let specialDiscount = 0;
         let globalInventory = []; 
+        let currentCategory = 'All'; 
         let html5QrcodeScanner = null;
 
         async function loadImperialVault() {
@@ -137,19 +141,73 @@
             grid.innerHTML = '<p class="text-zPurple animate-pulse col-span-2 lg:col-span-3 text-center tracking-widest text-sm">⏳ โหลดข้อมูล...</p>';
 
             try {
-                const { data, error } = await _supabase.from('ztech_inventory').select('*').order('strain_name', { ascending: true });
+                // ดึงข้อมูลและให้ Database เรียงตามการอัปเดตล่าสุดมาก่อน
+                const { data, error } = await _supabase.from('ztech_inventory').select('*').order('last_updated', { ascending: false });
                 if (error) throw error;
                 
                 globalInventory = data || []; 
+
+                // 🧠 Loric การจัดเรียงระดับ Wongnai POS:
+                // 1. มีสต๊อก (weight > 0) ต้องอยู่บน, สินค้าหมด (weight <= 0) ต้องอยู่ล่าง
+                // 2. ถ้าสถานะสต๊อกเท่ากัน ให้ยึดตามเวลาที่มีการขยับล่าสุด (last_updated)
+                globalInventory.sort((a, b) => {
+                    let aHasStock = a.stock_weight > 0 ? 1 : 0;
+                    let bHasStock = b.stock_weight > 0 ? 1 : 0;
+                    
+                    if (aHasStock !== bHasStock) {
+                        return bHasStock - aHasStock; // ผลักของหมดลงไปข้างล่าง
+                    }
+                    // ถ้าสถานะสต๊อกเหมือนกัน ให้เรียงตามเวลาล่าสุด
+                    let dateA = new Date(a.last_updated || 0).getTime();
+                    let dateB = new Date(b.last_updated || 0).getTime();
+                    return dateB - dateA;
+                });
                 
                 const farmSelect = document.getElementById('farm-filter');
                 const uniqueFarms = [...new Set(globalInventory.map(item => item.farm_name).filter(name => name))];
                 farmSelect.innerHTML = '<option value="">-- ทุกฟาร์ม --</option>' + 
                                        uniqueFarms.map(farm => `<option value="${farm}">${farm}</option>`).join('');
 
+                buildCategoryTabs();
                 filterInventory(); 
             } catch (error) {
                 grid.innerHTML = '<p class="text-red-500 col-span-2 lg:col-span-3 text-center text-sm">⚠️ ระบบขัดข้อง</p>';
+            }
+        }
+
+        function buildCategoryTabs() {
+            const tabContainer = document.getElementById('category-tabs');
+            const uniqueCats = [...new Set(globalInventory.map(item => item.category).filter(c => c))];
+            
+            tabContainer.innerHTML = `<button onclick="setCategory('All')" id="btn-cat-All" class="px-4 py-1 rounded-full text-sm font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors">ทั้งหมด</button>`;
+            
+            uniqueCats.forEach(cat => {
+                let icon = '🏷️';
+                if(cat === 'ดอก') icon = '🌸';
+                if(cat === 'ใต้เครื่อง') icon = '⚙️';
+                if(cat === 'ใบทริม') icon = '🍃';
+                
+                const btnHTML = `<button onclick="setCategory('${cat}')" id="btn-cat-${cat}" class="px-4 py-1 rounded-full text-sm font-bold bg-gray-900 text-gray-400 border border-gray-700 hover:text-white whitespace-nowrap transition-colors">${icon} ${cat}</button>`;
+                tabContainer.insertAdjacentHTML('beforeend', btnHTML);
+            });
+            updateTabColors();
+        }
+
+        function setCategory(cat) {
+            currentCategory = cat;
+            updateTabColors();
+            filterInventory();
+        }
+
+        function updateTabColors() {
+            const tabs = document.getElementById('category-tabs').children;
+            for(let btn of tabs) {
+                let catId = btn.id.replace('btn-cat-', '');
+                if(catId === currentCategory) {
+                    btn.className = "px-4 py-1 rounded-full text-sm font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors";
+                } else {
+                    btn.className = "px-4 py-1 rounded-full text-sm font-bold bg-gray-900 text-gray-400 border border-gray-700 hover:text-white whitespace-nowrap transition-colors";
+                }
             }
         }
 
@@ -169,10 +227,11 @@
                                     farmNameStr.includes(searchTerm);
                 
                 const matchFarm = farmTerm === "" || item.farm_name === farmTerm;
-                const matchCategory = categoryTerm === "" || item.category === categoryTerm;
+                const matchCategory = currentCategory === "All" || item.category === currentCategory;
+                const matchCatDropdown = categoryTerm === "" || item.category === categoryTerm;
                 const matchGrade = gradeTerm === "" || item.grade === gradeTerm;
                 
-                return matchSearch && matchFarm && matchCategory && matchGrade;
+                return matchSearch && matchFarm && matchCategory && matchCatDropdown && matchGrade;
             });
 
             if(filteredData.length === 0) {
@@ -191,9 +250,14 @@
 
                 let gradeDisplay = item.grade && item.grade !== '-' ? `<div class="absolute top-1 right-1 bg-zPurple text-[10px] px-2 py-0.5 rounded text-white shadow-md border border-purple-500">${item.grade}</div>` : '';
 
-                // อัปเกรด Card: ใส่ flex flex-col h-full ให้กล่องเสมอกัน และ aspect-square ให้รูป 1:1
+                // 🌟 ปรับแต่ง UI สำหรับของหมดสต๊อก
+                let isOutOfStock = item.stock_weight <= 0;
+                let outOfStockClass = isOutOfStock ? "opacity-50 grayscale cursor-not-allowed" : "cursor-pointer purple-glow";
+                let stockTextClass = isOutOfStock ? "text-red-500 font-bold" : "text-neonGreen font-bold";
+                let stockLabel = isOutOfStock ? "❌ สินค้าหมด" : `สต๊อก: ${item.stock_weight.toLocaleString()}g`;
+
                 const cardHTML = `
-                    <div class="bg-gray-900 rounded-lg p-3 cursor-pointer purple-glow transition-all duration-300 border border-gray-800 relative flex flex-col h-full" 
+                    <div class="bg-gray-900 rounded-lg p-3 transition-all duration-300 border border-gray-800 relative flex flex-col h-full ${outOfStockClass}" 
                          onclick="addToCart('${item.strain_name}', ${basePrice}, ${tier1Price}, ${tier2Price}, ${item.stock_weight}, '${item.sku}')">
                         <div class="aspect-square w-full bg-black rounded border border-gray-700 mb-2 flex items-center justify-center overflow-hidden relative shrink-0">
                             ${imgDisplay}
@@ -202,7 +266,7 @@
                         <div class="flex-grow flex flex-col justify-end">
                             <h2 class="text-sm md:text-base font-bold text-white mb-1 leading-tight line-clamp-2">${item.strain_name}</h2>
                             <div class="flex justify-between items-end text-[10px] md:text-xs text-gray-400 mt-auto pt-1 border-t border-gray-800">
-                                <span class="${item.stock_weight > 0 ? 'text-neonGreen font-bold' : 'text-red-500 font-bold'}">สต๊อก: ${item.stock_weight.toLocaleString()}g</span>
+                                <span class="${stockTextClass}">${stockLabel}</span>
                             </div>
                         </div>
                     </div>
@@ -211,7 +275,6 @@
             });
         }
 
-        // --- ระบบสแกนและตะกร้า ---
         function processScanResult(skuScanned) {
             skuScanned = skuScanned.trim().toUpperCase();
             if (!skuScanned) return;
@@ -249,8 +312,8 @@
         }
 
         function addToCart(name, base, t1, t2, stock, sku) {
-            if (stock <= 0) return alert(`⚠️ สินค้าหมด`);
-            if (cart.find(item => item.name === name)) return alert(`⚠️ มีในตะกร้าแล้ว`);
+            if (stock <= 0) return alert(`⚠️ สินค้าหมด: [${name}] ไม่มีสินค้าในคลังค่ะ`);
+            if (cart.find(item => item.name === name)) return alert(`⚠️ มี [${name}] ในตะกร้าแล้วค่ะ`);
             cart.push({ name, base, t1, t2, stock, sku, weight: 0 });
             renderCart();
         }
