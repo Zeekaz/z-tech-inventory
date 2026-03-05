@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Z-Tech Global | Imperial Vault</title>
+    <title>Z-Tech Global | Inventory System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Gothic Dark Theme */
         body { background-color: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
         .container { max-width: 1050px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 8px; background: #111; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
         h1 { color: #d4af37; text-align: center; font-size: 26px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
@@ -24,13 +23,11 @@
         .filter-section { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .filter-input { flex: 1; min-width: 140px; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; font-size: 15px; }
 
-        /* Modal Styles */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); overflow-y: auto; }
         .modal-content { background-color: #111; margin: 5% auto; padding: 30px; border: 2px solid #d4af37; width: 90%; max-width: 600px; border-radius: 10px; box-shadow: 0 0 30px rgba(212, 175, 55, 0.2); position: relative; }
         .close { color: #888; position: absolute; right: 20px; top: 15px; font-size: 28px; font-weight: bold; cursor: pointer; }
         .close:hover { color: #ff4444; }
 
-        /* Form Styles */
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; color: #d4af37; margin-bottom: 5px; font-size: 14px; font-weight: bold; }
         .form-input { width: 100%; padding: 10px; background: #050505; border: 1px solid #444; color: white; border-radius: 4px; box-sizing: border-box; transition: 0.3s; }
@@ -47,18 +44,16 @@
         
         input[type="file"]::file-selector-button { background: #4a0e4e; color: white; border: 1px solid #8b008b; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 15px; transition: 0.2s; }
         input[type="file"]::file-selector-button:hover { background: #6a1b6a; }
-        
-        /* สไตล์พิเศษสำหรับคำอธิบายใต้ช่องกรอก */
         .help-text { font-size: 11px; color: #888; margin-top: 3px; display: block; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🌑 Z-TECH IMPERIAL VAULT 🌑</h1>
+        <h1>🌑 Z-TECH INVENTORY 🌑</h1>
         
         <div style="text-align: center; margin-bottom: 30px; display: flex; justify-content: center; gap: 15px;">
             <button onclick="checkAdmin('manage')" class="btn-create">➕ เพิ่มรายการสินค้าใหม่</button>
-            <button onclick="checkAdmin('log')" class="btn-create" style="background: #8b0000; border-color: #550000; color: white;">👁️ ตรวจสอบประวัติบิล & กำไรสุทธิ</button>
+            <button onclick="checkAdmin('log')" class="btn-create" style="background: #8b0000; border-color: #550000; color: white;">📊 ตรวจสอบประวัติบิล & กำไร</button>
         </div>
 
         <div class="filter-section">
@@ -100,7 +95,7 @@
                 </tr>
             </thead>
             <tbody id="product-list">
-                <tr><td colspan="8" style="text-align:center; padding: 20px;">กำลังดึงข้อมูลคลังสินค้า...</td></tr>
+                <tr><td colspan="8" style="text-align:center; padding: 20px;">กำลังโหลดข้อมูลคลังสินค้า...</td></tr>
             </tbody>
         </table>
     </div>
@@ -109,7 +104,7 @@
         <div class="modal-content">
             <span class="close" onclick="closeAddModal()">&times;</span>
             <h2 style="color:#d4af37; margin-top:0; text-align:center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">
-                🌑 เพิ่มรายการสินค้าใหม่ (New Item)
+                🌑 เพิ่มรายการสินค้าใหม่
             </h2>
             
             <div class="grid-2">
@@ -187,7 +182,7 @@
                 <input type="number" step="any" id="f_stock" class="form-input" placeholder="0" style="border-color: #39ff14; font-weight: bold;">
             </div>
 
-            <button class="btn-submit" id="save-btn" onclick="saveNewProduct()">🩸 บันทึกข้อมูลลงคลัง</button>
+            <button class="btn-submit" id="save-btn" onclick="saveNewProduct()">💾 บันทึกข้อมูลลงระบบ</button>
         </div>
     </div>
 
@@ -200,7 +195,7 @@
                 <img id="modalQrImg" src="" alt="QR Code" style="display:block;">
             </div>
             <br>
-            <button onclick="printQR()" style="padding: 12px 24px; background:#d4af37; color:#000; border:none; border-radius:4px; cursor:pointer; font-weight:bold; font-size:16px; width:100%;">🖨️ พิมพ์ QR Code ซ้ำ</button>
+            <button onclick="printQR()" style="padding: 12px 24px; background:#d4af37; color:#000; border:none; border-radius:4px; cursor:pointer; font-weight:bold; font-size:16px; width:100%;">🖨️ พิมพ์ QR Code</button>
         </div>
     </div>
 
@@ -227,21 +222,19 @@
             const list = document.getElementById('product-list');
             
             if (error) {
-                list.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#ff4444;">❌ ขัดข้อง: ${error.message}</td></tr>`;
+                list.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#ff4444;">❌ ระบบขัดข้อง: ${error.message}</td></tr>`;
                 return;
             }
 
             if (data && data.length > 0) {
                 allProducts = data; 
-                
                 const farmSelect = document.getElementById('farm-filter');
                 const uniqueFarms = [...new Set(data.map(item => item.farm_name).filter(name => name))];
                 farmSelect.innerHTML = '<option value="">-- ทุกฟาร์ม --</option>' + 
                                        uniqueFarms.map(farm => `<option value="${farm}">${farm}</option>`).join('');
-
                 renderTable(allProducts); 
             } else {
-                list.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 30px; color: #666;">คลังสินค้าว่างเปล่า...</td></tr>`;
+                list.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 30px; color: #666;">ไม่มีข้อมูลในคลังสินค้า...</td></tr>`;
             }
         }
 
@@ -251,7 +244,7 @@
                 list.innerHTML = dataToRender.map(item => {
                     let imgThumb = item.image_url 
                         ? `<img src="${item.image_url}" class="thumb-img">` 
-                        : `<div class="thumb-placeholder">DARK<br>VAULT</div>`;
+                        : `<div class="thumb-placeholder">NO<br>IMAGE</div>`;
                         
                     return `
                     <tr>
@@ -293,12 +286,12 @@
         }
 
         function checkAdmin(targetPage) {
-            let pass = prompt("🌑 ระบบสงวนสิทธิ์เฉพาะผู้บริหาร กรุณาใส่รหัสผ่าน:");
+            let pass = prompt("🔒 ระบบผู้จัดการ: กรุณาใส่รหัสผ่าน");
             if (pass === "0420") {
                 if(targetPage === 'manage') openAddModal();
                 if(targetPage === 'log') window.location.href = "log.html"; 
             } else if (pass !== null && pass !== "") {
-                alert("❌ รหัสผ่านไม่ถูกต้อง! คุณไม่มีสิทธิ์เข้าถึงส่วนนี้ค่ะ");
+                alert("❌ รหัสผ่านไม่ถูกต้อง!");
             }
         }
 
@@ -310,7 +303,7 @@
         function openAddModal() {
             document.getElementById('f_sku').value = generateSKU();
             document.getElementById('f_category').value = 'ดอก';
-            toggleGrade(); // รีเซ็ตสถานะช่องเกรด
+            toggleGrade(); 
             document.getElementById('addProductModal').style.display = 'block';
         }
 
@@ -331,7 +324,7 @@
             const price_tier2 = parseFloat(document.getElementById('f_t2').value) || 0;
             const stock_weight = parseFloat(document.getElementById('f_stock').value) || 0;
 
-            if(!strain_name) return alert("⚠️ กรุณาระบุชื่อรายการ/สายพันธุ์ค่ะ");
+            if(!strain_name) return alert("⚠️ กรุณาระบุชื่อรายการ/สายพันธุ์");
 
             const btn = document.getElementById('save-btn');
             const fileInput = document.getElementById('f_image_file');
@@ -352,12 +345,11 @@
 
                     if (uploadErr) {
                         console.warn("Storage upload error:", uploadErr);
-                        alert("⚠️ ไม่สามารถอัปโหลดรูปได้ (อาจจะยังไม่ได้เปิด Storage) แต่ข้อมูลอื่นจะถูกบันทึกค่ะ");
+                        alert("⚠️ ไม่สามารถอัปโหลดรูปได้ แต่ข้อมูลอื่นจะถูกบันทึกตามปกติ");
                     } else {
                         const { data: publicUrlData } = _supabase.storage
                             .from('ztech_images')
                             .getPublicUrl(fileName);
-                            
                         finalImageUrl = publicUrlData.publicUrl;
                     }
                 }
@@ -368,15 +360,13 @@
                 }]);
 
                 if (error) {
-                    console.error("Database Error:", error);
-                    // จับ Error RLS และแปลงให้ลูกค้าเข้าใจง่าย
                     if(error.message.includes('row-level security')) {
-                        throw new Error("ระบบฐานข้อมูลถูกล็อก (RLS Policy) กรุณาเข้าไปตั้งค่าสิทธิ์การเข้าถึง (Policies) ใน Supabase ให้เป็น 'Enable read and write access' สำหรับตาราง ztech_inventory ค่ะ");
+                        throw new Error("ระบบฐานข้อมูลถูกล็อก (RLS) กรุณาตรวจสอบสิทธิ์ใน Supabase ค่ะ");
                     }
                     throw error;
                 }
 
-                alert("✅ เพิ่มรายการสินค้าใหม่ลงคลังสำเร็จแล้วค่ะ!");
+                alert("✅ เพิ่มรายการสินค้าใหม่สำเร็จ!");
                 closeAddModal();
                 
                 document.querySelectorAll('.form-input').forEach(input => {
@@ -390,12 +380,11 @@
                 console.error(error);
                 alert("❌ เกิดข้อผิดพลาด: " + error.message);
             } finally {
-                btn.innerHTML = "🩸 บันทึกข้อมูลลงคลัง";
+                btn.innerHTML = "💾 บันทึกข้อมูลลงระบบ";
                 btn.disabled = false;
             }
         }
 
-        // --- ระบบ QR Code ---
         function openQR(sku, strain, grade) {
             let gradeText = grade === '-' ? '' : ` (${grade})`;
             document.getElementById('modalStrain').innerText = strain + gradeText;

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Z-Tech | Killer POS Phase 1.5</title>
+    <title>Z-Tech | POS System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -11,7 +11,7 @@
             theme: {
                 extend: {
                     colors: {
-                        darkBg: '#050505', gothicPurple: '#4a0e4e', neonGreen: '#39ff14', goldDark: '#b5952f', bloodRed: '#8b0000'
+                        darkBg: '#050505', zPurple: '#4a0e4e', neonGreen: '#39ff14', goldDark: '#b5952f'
                     },
                     fontFamily: { sans: ['Segoe UI', 'sans-serif'] }
                 }
@@ -26,33 +26,32 @@
         ::-webkit-scrollbar-thumb { background: #4a0e4e; border-radius: 10px; }
         .tier-upgrade { animation: flash 0.5s ease-in-out; }
         @keyframes flash { 0% { opacity: 0.5; transform: scale(0.98); } 100% { opacity: 1; transform: scale(1); } }
-        /* เอฟเฟกต์ตอนสแกนติด */
         .scan-flash { animation: scanGlow 0.3s ease-out; }
         @keyframes scanGlow { 0% { background-color: #39ff14; color: #000; } 100% { background-color: #000; color: #39ff14; } }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden">
 
-    <div class="w-2/3 p-6 overflow-y-auto border-r border-gothicPurple">
+    <div class="w-2/3 p-6 overflow-y-auto border-r border-zPurple">
         <h1 class="text-3xl font-bold text-goldDark tracking-widest mb-6 uppercase border-b border-gray-800 pb-4">
-            🌑 Z-Tech Imperial Vault
+            🌑 Z-Tech Inventory
         </h1>
         <div class="grid grid-cols-3 gap-6" id="product-grid"></div>
     </div>
 
     <div class="w-1/3 p-6 bg-black flex flex-col relative">
-        <h2 class="text-2xl text-neonGreen font-bold mb-4 text-center tracking-wider">🛒 GOTHIC CART</h2>
+        <h2 class="text-2xl text-neonGreen font-bold mb-4 text-center tracking-wider">🛒 ORDER CART</h2>
         
         <div class="mb-4">
-            <input type="text" id="scanner-input" placeholder="🔳 ใช้ปืนสแกน QR Code ที่นี่..." class="w-full bg-black border border-neonGreen text-neonGreen font-mono text-center tracking-widest p-3 rounded focus:outline-none focus:shadow-[0_0_15px_rgba(57,255,20,0.5)] transition-all" autofocus autocomplete="off">
+            <input type="text" id="scanner-input" placeholder="🔳 สแกน QR Code ที่นี่..." class="w-full bg-black border border-neonGreen text-neonGreen font-mono text-center tracking-widest p-3 rounded focus:outline-none focus:shadow-[0_0_15px_rgba(57,255,20,0.5)] transition-all" autofocus autocomplete="off">
         </div>
 
         <div class="mb-4">
-            <input type="text" id="customer-name" placeholder="ชื่อร้านค้า/ลูกค้า (จำเป็น)" class="w-full bg-gray-900 border border-gothicPurple text-white p-3 rounded focus:outline-none focus:border-neonGreen transition-colors">
+            <input type="text" id="customer-name" placeholder="ชื่อร้านค้า/ลูกค้า (จำเป็น)" class="w-full bg-gray-900 border border-zPurple text-white p-3 rounded focus:outline-none focus:border-neonGreen transition-colors">
         </div>
 
         <div class="flex-grow overflow-y-auto mb-4 border-b border-gray-800 pb-4" id="cart-items">
-            <p class="text-gray-600 text-center mt-10">🕸️ ตะกร้าว่างเปล่า... สแกน QR หรือเลือกจากคลังด้านซ้าย</p>
+            <p class="text-gray-600 text-center mt-10">ตะกร้าว่างเปล่า... สแกน QR หรือเลือกจากคลังด้านซ้าย</p>
         </div>
 
         <div class="bg-gray-900 p-5 rounded border border-gray-800 mb-4 transition-all duration-300" id="summary-box">
@@ -67,7 +66,7 @@
             </div>
 
             <div class="flex justify-between text-red-500 hover:text-red-400 mb-3 pb-2 border-b border-gray-700 cursor-pointer transition-colors" onclick="promptDiscount()">
-                <span class="font-bold">🎟️ ใส่ส่วนลดพิเศษ (คลิก):</span>
+                <span class="font-bold">🎟️ ส่วนลดพิเศษ (คลิก):</span>
                 <span id="discount-display" class="font-bold">- ฿0.00</span>
             </div>
 
@@ -80,8 +79,8 @@
             </div>
         </div>
 
-        <button id="checkout-btn" class="w-full bg-gothicPurple hover:bg-purple-900 text-white font-bold py-4 rounded-lg transition-colors border border-purple-500 neon-border tracking-widest text-lg" onclick="checkout()">
-            🩸 ยืนยันคำสั่งซื้อ (ตัดสต๊อกและยิงสลิป)
+        <button id="checkout-btn" class="w-full bg-zPurple hover:bg-purple-900 text-white font-bold py-4 rounded-lg transition-colors border border-purple-500 neon-border tracking-widest text-lg" onclick="checkout()">
+            ✅ ยืนยันคำสั่งซื้อ (ตัดสต๊อกและยิงสลิป)
         </button>
     </div>
 
@@ -92,27 +91,23 @@
         
         let cart = []; 
         let specialDiscount = 0;
-        let globalInventory = []; // เก็บข้อมูลสินค้าทั้งหมดไว้เทียบตอนสแกน
+        let globalInventory = []; 
 
         async function loadImperialVault() {
             const grid = document.getElementById('product-grid');
-            grid.innerHTML = '<p class="text-gothicPurple animate-pulse col-span-3 text-center tracking-widest">🔮 กำลังเปิดประตูมิติแห่งความมืด...</p>';
+            grid.innerHTML = '<p class="text-zPurple animate-pulse col-span-3 text-center tracking-widest">⏳ กำลังโหลดข้อมูลคลังสินค้า...</p>';
 
             try {
-                const { data, error } = await _supabase
-                    .from('ztech_inventory')
-                    .select('*')
-                    .order('strain_name', { ascending: true });
-
+                const { data, error } = await _supabase.from('ztech_inventory').select('*').order('strain_name', { ascending: true });
                 if (error) throw error;
                 grid.innerHTML = ''; 
 
                 if(data.length === 0) {
-                    grid.innerHTML = '<p class="text-gray-500 col-span-3 text-center">🕸️ คลังสินค้าว่างเปล่า...</p>';
+                    grid.innerHTML = '<p class="text-gray-500 col-span-3 text-center">ไม่มีสินค้าในคลัง...</p>';
                     return;
                 }
 
-                globalInventory = data; // บันทึกเข้าสมองกลเพื่อรอสแกน
+                globalInventory = data; 
 
                 data.forEach(item => {
                     let basePrice = item.price_base || 0;
@@ -123,7 +118,7 @@
                         ? `<img src="${item.image_url}" class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">` 
                         : `<span class="text-gray-600 font-bold uppercase tracking-widest">${item.category || 'ITEM'}</span>`;
 
-                    let gradeDisplay = item.grade && item.grade !== '-' ? `<div class="absolute top-2 right-2 bg-gothicPurple text-xs px-2 py-1 rounded text-white">${item.grade}</div>` : '';
+                    let gradeDisplay = item.grade && item.grade !== '-' ? `<div class="absolute top-2 right-2 bg-zPurple text-xs px-2 py-1 rounded text-white">${item.grade}</div>` : '';
 
                     const cardHTML = `
                         <div class="bg-gray-900 rounded-lg p-4 cursor-pointer purple-glow transition-all duration-300 border border-gray-800" 
@@ -142,19 +137,16 @@
                     grid.insertAdjacentHTML('beforeend', cardHTML);
                 });
             } catch (error) {
-                grid.innerHTML = '<p class="text-red-500 col-span-3 text-center">⚠️ รอยรั่วในมิติ: ไม่สามารถดึงข้อมูลได้</p>';
+                grid.innerHTML = '<p class="text-red-500 col-span-3 text-center">⚠️ ระบบขัดข้อง: ไม่สามารถดึงข้อมูลได้</p>';
             }
         }
 
-        // --- ระบบสแกน QR Code ---
         document.getElementById('scanner-input').addEventListener('keypress', function(e) {
-            // เมื่อเครื่องสแกนยิงรหัสเสร็จ มันจะส่งปุ่ม Enter (key code 13) มาให้
             if (e.key === 'Enter') {
                 e.preventDefault();
                 let skuScanned = this.value.trim().toUpperCase();
                 if (!skuScanned) return;
 
-                // ค้นหาสินค้าจากฐานข้อมูลที่โหลดไว้
                 let foundItem = globalInventory.find(item => item.sku && item.sku.toUpperCase() === skuScanned);
                 
                 if (foundItem) {
@@ -162,32 +154,20 @@
                     let tier1Price = foundItem.price_tier1 || 0;
                     let tier2Price = foundItem.price_tier2 || 0;
                     
-                    // เพิ่มเข้าตะกร้า
                     addToCart(foundItem.strain_name, basePrice, tier1Price, tier2Price, foundItem.stock_weight, foundItem.sku);
                     
-                    // ทำเอฟเฟกต์กระพริบให้รู้ว่าสแกนติด
                     this.classList.add('scan-flash');
                     setTimeout(() => this.classList.remove('scan-flash'), 300);
                 } else {
-                    alert('❌ เวทมนตร์ล้มเหลว: ไม่พบสินค้ารหัส [' + skuScanned + '] ในคลังค่ะ');
+                    alert('❌ ไม่พบสินค้ารหัส [' + skuScanned + '] ในระบบค่ะ');
                 }
-                
-                // ล้างช่องเตรียมสแกนตัวต่อไป
                 this.value = '';
             }
         });
 
         function addToCart(name, base, t1, t2, stock, sku) {
-            if (stock <= 0) {
-                alert(`⚠️ สินค้าหมด: [${name}] ไม่มีสินค้าในคลังค่ะ`);
-                return;
-            }
-
-            let existingItem = cart.find(item => item.name === name);
-            if (existingItem) {
-                alert(`⚠️ มี [${name}] ในตะกร้าแล้วค่ะ กรุณาปรับจำนวนน้ำหนักที่ตะกร้าด้านขวาได้เลย`);
-                return;
-            }
+            if (stock <= 0) return alert(`⚠️ สินค้าหมด: [${name}] ไม่มีสินค้าในคลังค่ะ`);
+            if (cart.find(item => item.name === name)) return alert(`⚠️ มี [${name}] ในตะกร้าแล้วค่ะ กรุณาปรับจำนวนน้ำหนักที่ตะกร้า`);
             cart.push({ name, base, t1, t2, stock, sku, weight: 0 });
             renderCart();
         }
@@ -195,7 +175,7 @@
         function renderCart() {
             const cartDiv = document.getElementById('cart-items');
             if (cart.length === 0) {
-                cartDiv.innerHTML = '<p class="text-gray-600 text-center mt-10">🕸️ ตะกร้าว่างเปล่า... สแกน QR หรือเลือกจากคลังด้านซ้าย</p>';
+                cartDiv.innerHTML = '<p class="text-gray-600 text-center mt-10">ตะกร้าว่างเปล่า... สแกน QR หรือเลือกจากคลังด้านซ้าย</p>';
                 calculateTotals();
                 return;
             }
@@ -228,16 +208,13 @@
         function updateWeight(index, value) {
             let w = parseFloat(value);
             if (isNaN(w) || w < 0) w = 0;
-            
             if (w > cart[index].stock) {
                 alert(`⚠️ สินค้าไม่พอ! สต๊อก ${cart[index].name} มีเพียง ${cart[index].stock}g ค่ะ`);
                 w = cart[index].stock;
-                renderCart(); 
-                return;
             }
-            
             cart[index].weight = w;
             calculateTotals();
+            renderCart();
         }
 
         function removeFromCart(index) {
@@ -246,22 +223,14 @@
         }
 
         function promptDiscount() {
-            let pin = prompt("🌑 ระบบป้องกันการทุจริต: กรุณาใส่รหัสผ่านผู้จัดการเพื่อมอบส่วนลด");
+            let pin = prompt("🔒 ระบบผู้จัดการ: กรุณาใส่รหัสผ่านเพื่อมอบส่วนลด");
             if (pin === null) return; 
-            
-            if (pin !== "0420") {
-                alert("❌ รหัสผ่านไม่ถูกต้อง! คุณไม่มีสิทธิ์อนุมัติส่วนลดค่ะ");
-                return;
-            }
+            if (pin !== "0420") return alert("❌ รหัสผ่านไม่ถูกต้อง!");
 
             let amountStr = prompt("🎟️ ระบุจำนวนเงินที่ต้องการลด (บาท):", "0");
             if (amountStr === null) return;
-
             let amount = parseFloat(amountStr);
-            if (isNaN(amount) || amount < 0) {
-                alert("❌ กรุณาใส่ตัวเลขให้ถูกต้องค่ะ");
-                return;
-            }
+            if (isNaN(amount) || amount < 0) return alert("❌ กรุณาใส่ตัวเลขให้ถูกต้อง");
 
             specialDiscount = amount;
             calculateTotals();
@@ -317,28 +286,28 @@
             document.getElementById('summary-box').className = `bg-gray-900 p-5 rounded border ${boxBorder} mb-4 transition-all duration-300 shadow-lg`;
         }
 
-        async function sendGothicSlip(customer, cartItems, totalW, subtotalP, finalP, discount) {
+        // 📍 จุดที่บอสสามารถแก้ไขคำพูดในใบเสร็จ/สลิปได้
+        async function sendLineSlip(customer, cartItems, totalW, subtotalP, finalP, discount) {
             const token = '2mqUKe/Rb3dM/vKhOPvuXB8ag0eCS7t8ITrg5+NRiTWKXhgeA/aypMOZc5aDDvpufwkkeioOULxPu7/57MGs7Y1HGGfMW7xZd9vQD0lyY5DID8X9dfYv6AYHm3q1vqLDHzsrPO51asEQDb7stjyMSgdB04t89/1O/w1cDnyilFU=';
-            // กลุ่มสต๊อก หรือ ปลายทางของบิลขาย
-            const userId = 'Cbf93761b1ac023b9fbe28afa7efbfb16';
+            const userId = 'Cbf93761b1ac023b9fbe28afa7efbfb16'; // กลุ่ม Highbuds
 
             let itemList = cartItems.map(item => `▪️ ${item.name}: ${item.weight}g`).join('\n');
             
-            let msgText = `🌑 𝖅-𝕿𝖊𝖈𝖍 𝕴𝖒𝖕𝖊𝖗𝖎𝖆𝖑 𝖁𝖆𝖚𝖑𝖙 🌑\n\n` +
-                          `🩸 ยืนยันคำสั่งซื้อ (ตัดสต๊อกแล้ว) 🩸\n` +
+            let msgText = `🌑 Z-Tech Management 🌑\n\n` +
+                          `✅ ยืนยันคำสั่งซื้อ (ชำระเงินแล้ว)\n` +
                           `━━━━━━━━━━━━━━\n` +
                           `👤 ลูกค้า: ${customer}\n` +
                           `⚖️ น้ำหนักรวม: ${totalW.toLocaleString()} g\n` +
-                          `💰 ยอดก่อนลด: ฿${subtotalP.toLocaleString(undefined, {minimumFractionDigits: 2})}\n`;
+                          `💰 ยอดรวม: ฿${subtotalP.toLocaleString(undefined, {minimumFractionDigits: 2})}\n`;
             
             if (discount > 0) {
-                msgText += `🎟️ ส่วนลดพิเศษ (อนุมัติแล้ว): -฿${discount.toLocaleString(undefined, {minimumFractionDigits: 2})}\n`;
+                msgText += `🎟️ ส่วนลด: -฿${discount.toLocaleString(undefined, {minimumFractionDigits: 2})}\n`;
             }
 
-            msgText +=    `🔥 ยอดเก็บเงินสุทธิ: ฿${finalP.toLocaleString(undefined, {minimumFractionDigits: 2})}\n` +
+            msgText +=    `🔥 ยอดสุทธิ: ฿${finalP.toLocaleString(undefined, {minimumFractionDigits: 2})}\n` +
                           `━━━━━━━━━━━━━━\n` +
-                          `📦 รายการเบิก:\n${itemList}\n\n` +
-                          `⚡ สแกนและอนุมัติโดย Z-Tech System`;
+                          `📦 รายการสินค้า:\n${itemList}\n\n` +
+                          `⚡ Approved by Z-Tech System`;
 
             const url = 'https://corsproxy.io/?' + encodeURIComponent('https://api.line.me/v2/bot/message/push');
 
@@ -355,7 +324,7 @@
 
         async function checkout() {
             let customer = document.getElementById('customer-name').value.trim();
-            if(!customer) return alert("⚠️ โปรดระบุชื่อลูกค้าค้าส่งก่อนออกบิลค่ะ!");
+            if(!customer) return alert("⚠️ โปรดระบุชื่อลูกค้าก่อนออกบิลค่ะ!");
             
             let validCart = cart.filter(item => item.weight > 0);
             if(validCart.length === 0) return alert("⚠️ ตะกร้าว่างเปล่า หรือยังไม่ได้ระบุน้ำหนักค่ะ!");
@@ -396,11 +365,11 @@
                     discount_amount: specialDiscount, 
                     net_price: finalP 
                 }]);
-                if (orderErr) console.warn("ระบบบันทึกบิลรวมขัดข้อง:", orderErr);
+                if (orderErr) console.warn("ระบบบันทึกบิลขัดข้อง:", orderErr);
 
-                await sendGothicSlip(customer, validCart, totalW, subtotalP, finalP, specialDiscount);
+                await sendLineSlip(customer, validCart, totalW, subtotalP, finalP, specialDiscount);
 
-                alert(`🩸 ปิดการขายให้ [${customer}] สำเร็จ!\nข้อมูลตัดสต๊อกและส่งสลิปเข้า LINE เรียบร้อยแล้วค่ะ`);
+                alert(`✅ ปิดการขายให้ [${customer}] สำเร็จ!\nข้อมูลถูกบันทึกและส่งสลิปเข้า LINE เรียบร้อยแล้ว`);
 
                 cart = [];
                 specialDiscount = 0;
@@ -412,7 +381,7 @@
                 console.error("Error:", error);
                 alert("❌ ระบบขัดข้อง: " + error.message);
             } finally {
-                btn.innerHTML = "🩸 ยืนยันคำสั่งซื้อ (ตัดสต๊อกและยิงสลิป)";
+                btn.innerHTML = "✅ ยืนยันคำสั่งซื้อ (ตัดสต๊อกและยิงสลิป)";
                 btn.disabled = false;
                 btn.classList.remove('opacity-50', 'cursor-not-allowed');
             }
