@@ -25,8 +25,9 @@
         .purple-glow:hover { box-shadow: 0 0 15px rgba(74, 14, 78, 0.8); border-color: #4a0e4e; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #4a0e4e; border-radius: 10px; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* สไตล์หน้าจอกล้อง */
         #qr-reader { width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid #39ff14; display: none; margin-bottom: 15px; }
         #qr-reader__scan_region { background: #000; }
         #qr-reader__dashboard { background: #111; color: #fff; padding: 10px; }
@@ -35,26 +36,48 @@
 </head>
 <body class="h-screen flex flex-col md:flex-row overflow-hidden">
 
-    <div class="w-full md:w-2/3 h-1/2 md:h-full p-4 md:p-6 overflow-y-auto border-b md:border-b-0 md:border-r border-zPurple">
-        <h1 class="text-2xl md:text-3xl font-bold text-goldDark tracking-widest mb-4 uppercase border-b border-gray-800 pb-2">
-            🌑 Z-Tech Inventory
-        </h1>
-        <div class="grid grid-cols-2 lg:grid-cols-3 gap-4" id="product-grid"></div>
+    <div class="w-full md:w-2/3 h-1/2 md:h-full p-4 md:p-6 overflow-y-auto border-b md:border-b-0 md:border-r border-zPurple flex flex-col">
+        <div class="flex justify-between items-center mb-4 border-b border-gray-800 pb-2 shrink-0">
+            <h1 class="text-2xl md:text-3xl font-bold text-goldDark tracking-widest uppercase">
+                🌑 Z-Tech Inventory
+            </h1>
+        </div>
+
+        <div class="flex flex-col gap-2 mb-4 shrink-0">
+            <div class="flex gap-2">
+                <input type="text" id="search-inventory" placeholder="🔍 ค้นหาสายพันธุ์ / รหัส..." class="w-3/4 bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-sm" onkeyup="filterInventory()">
+                <select id="grade-filter" class="w-1/4 bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-sm" onchange="filterInventory()">
+                    <option value="">ทุกเกรด</option>
+                    <option value="TOP">TOP</option>
+                    <option value="Mid">Mid</option>
+                    <option value="Pop">Pop</option>
+                    <option value="Mini-pop">Mini-pop</option>
+                    <option value="Mixed">Mixed</option>
+                    <option value="Other">Other</option>
+                    <option value="-">-</option>
+                </select>
+            </div>
+            <div id="category-tabs" class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide pt-1">
+                <button onclick="setCategory('All')" id="btn-cat-All" class="px-4 py-1 rounded-full text-sm font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors">ทั้งหมด</button>
+                </div>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 flex-grow overflow-y-auto content-start" id="product-grid"></div>
     </div>
 
     <div class="w-full md:w-1/3 h-1/2 md:h-full p-4 md:p-6 bg-black flex flex-col relative">
-        <h2 class="text-xl md:text-2xl text-neonGreen font-bold mb-3 text-center tracking-wider">🛒 ORDER CART</h2>
+        <h2 class="text-xl md:text-2xl text-neonGreen font-bold mb-3 text-center tracking-wider shrink-0">🛒 ORDER CART</h2>
         
-        <div class="flex gap-2 mb-3">
+        <div class="flex gap-2 mb-3 shrink-0">
             <input type="text" id="scanner-input" placeholder="🔳 ใช้ปืนสแกน..." class="w-2/3 bg-black border border-neonGreen text-neonGreen font-mono text-center tracking-widest p-2 rounded focus:outline-none" autocomplete="off">
             <button onclick="toggleCamera()" class="w-1/3 bg-gray-800 hover:bg-gray-700 text-neonGreen border border-neonGreen rounded font-bold text-sm">
                 📷 กล้อง
             </button>
         </div>
 
-        <div id="qr-reader"></div>
+        <div id="qr-reader" class="shrink-0"></div>
 
-        <div class="mb-3">
+        <div class="mb-3 shrink-0">
             <input type="text" id="customer-name" placeholder="ชื่อร้านค้า/ลูกค้า" class="w-full bg-gray-900 border border-zPurple text-white p-2 rounded focus:outline-none focus:border-neonGreen">
         </div>
 
@@ -62,7 +85,7 @@
             <p class="text-gray-600 text-center mt-5 text-sm">ตะกร้าว่างเปล่า...</p>
         </div>
 
-        <div class="bg-gray-900 p-3 rounded border border-gray-800 mb-3" id="summary-box">
+        <div class="bg-gray-900 p-3 rounded border border-gray-800 mb-3 shrink-0" id="summary-box">
             <div class="flex justify-between text-gray-400 text-sm mb-1">
                 <span>น้ำหนักรวม:</span>
                 <span id="total-grams" class="text-white font-bold">0 g</span>
@@ -86,7 +109,7 @@
             </div>
         </div>
 
-        <button id="checkout-btn" class="w-full bg-zPurple hover:bg-purple-900 text-white font-bold py-3 rounded-lg border border-purple-500 neon-border text-base" onclick="checkout()">
+        <button id="checkout-btn" class="w-full bg-zPurple hover:bg-purple-900 text-white font-bold py-3 rounded-lg border border-purple-500 neon-border text-base shrink-0" onclick="checkout()">
             ✅ ยืนยันคำสั่งซื้อ
         </button>
     </div>
@@ -99,6 +122,7 @@
         let cart = []; 
         let specialDiscount = 0;
         let globalInventory = []; 
+        let currentCategory = 'All'; 
         let html5QrcodeScanner = null;
 
         async function loadImperialVault() {
@@ -108,46 +132,110 @@
             try {
                 const { data, error } = await _supabase.from('ztech_inventory').select('*').order('strain_name', { ascending: true });
                 if (error) throw error;
-                grid.innerHTML = ''; 
-
-                if(data.length === 0) {
-                    grid.innerHTML = '<p class="text-gray-500 col-span-2 lg:col-span-3 text-center text-sm">ไม่มีสินค้า</p>';
-                    return;
-                }
-
-                globalInventory = data; 
-
-                data.forEach(item => {
-                    let basePrice = item.price_base || 0;
-                    let tier1Price = item.price_tier1 || 0;
-                    let tier2Price = item.price_tier2 || 0;
-                    
-                    let imgDisplay = item.image_url 
-                        ? `<img src="${item.image_url}" class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">` 
-                        : `<span class="text-gray-600 font-bold uppercase tracking-widest text-xs">${item.category || 'ITEM'}</span>`;
-
-                    let gradeDisplay = item.grade && item.grade !== '-' ? `<div class="absolute top-1 right-1 bg-zPurple text-[10px] px-1 rounded text-white">${item.grade}</div>` : '';
-
-                    const cardHTML = `
-                        <div class="bg-gray-900 rounded-lg p-3 cursor-pointer purple-glow transition-all duration-300 border border-gray-800" 
-                             onclick="addToCart('${item.strain_name}', ${basePrice}, ${tier1Price}, ${tier2Price}, ${item.stock_weight}, '${item.sku}')">
-                            <div class="h-20 md:h-24 bg-black rounded border border-gray-700 mb-2 flex items-center justify-center overflow-hidden relative">
-                                ${imgDisplay}
-                                ${gradeDisplay}
-                            </div>
-                            <h2 class="text-sm md:text-base font-bold text-white mb-1 truncate">${item.strain_name}</h2>
-                            <div class="flex justify-between text-[10px] md:text-xs text-gray-400">
-                                <span class="${item.stock_weight > 0 ? 'text-neonGreen' : 'text-red-500'}">สต๊อก: ${item.stock_weight.toLocaleString()}g</span>
-                            </div>
-                        </div>
-                    `;
-                    grid.insertAdjacentHTML('beforeend', cardHTML);
-                });
+                
+                globalInventory = data || []; 
+                buildCategoryTabs(); // สร้างปุ่มหมวดหมู่จากข้อมูลจริง
+                filterInventory(); // เรียกฟังก์ชันวาดกริด (ซึ่งรวมระบบค้นหาแล้ว)
             } catch (error) {
                 grid.innerHTML = '<p class="text-red-500 col-span-2 lg:col-span-3 text-center text-sm">⚠️ ระบบขัดข้อง</p>';
             }
         }
 
+        // ฟังก์ชันสร้างปุ่มหมวดหมู่ให้อัตโนมัติตามที่มีในฐานข้อมูล
+        function buildCategoryTabs() {
+            const tabContainer = document.getElementById('category-tabs');
+            
+            // ดึงหมวดหมู่ที่ไม่ซ้ำกันออกมา
+            const uniqueCats = [...new Set(globalInventory.map(item => item.category).filter(c => c))];
+            
+            // ล้างปุ่มเก่า (เก็บปุ่ม All ไว้)
+            tabContainer.innerHTML = `<button onclick="setCategory('All')" id="btn-cat-All" class="px-4 py-1 rounded-full text-sm font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors">ทั้งหมด</button>`;
+            
+            // สร้างปุ่มใหม่
+            uniqueCats.forEach(cat => {
+                let icon = '🏷️';
+                if(cat === 'ดอก') icon = '🌸';
+                if(cat === 'ใต้เครื่อง') icon = '⚙️';
+                if(cat === 'ใบทริม') icon = '🍃';
+                
+                const btnHTML = `<button onclick="setCategory('${cat}')" id="btn-cat-${cat}" class="px-4 py-1 rounded-full text-sm font-bold bg-gray-900 text-gray-400 border border-gray-700 hover:text-white whitespace-nowrap transition-colors">${icon} ${cat}</button>`;
+                tabContainer.insertAdjacentHTML('beforeend', btnHTML);
+            });
+            
+            // ตั้งค่าสีปุ่มให้ตรงกับหมวดปัจจุบัน
+            updateTabColors();
+        }
+
+        function setCategory(cat) {
+            currentCategory = cat;
+            updateTabColors();
+            filterInventory();
+        }
+
+        function updateTabColors() {
+            const tabs = document.getElementById('category-tabs').children;
+            for(let btn of tabs) {
+                let catId = btn.id.replace('btn-cat-', '');
+                if(catId === currentCategory) {
+                    btn.className = "px-4 py-1 rounded-full text-sm font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors";
+                } else {
+                    btn.className = "px-4 py-1 rounded-full text-sm font-bold bg-gray-900 text-gray-400 border border-gray-700 hover:text-white whitespace-nowrap transition-colors";
+                }
+            }
+        }
+
+        // ฟังก์ชันตัวกรองหลัก (Search + Category + Grade)
+        function filterInventory() {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = '';
+
+            const searchTerm = document.getElementById('search-inventory').value.toLowerCase();
+            const gradeTerm = document.getElementById('grade-filter').value;
+
+            // กรองข้อมูลผ่านเงื่อนไขทั้ง 3 ด่าน
+            let filteredData = globalInventory.filter(item => {
+                const matchSearch = item.strain_name.toLowerCase().includes(searchTerm) || 
+                                    (item.sku && item.sku.toLowerCase().includes(searchTerm));
+                const matchCategory = currentCategory === 'All' || item.category === currentCategory;
+                const matchGrade = gradeTerm === '' || item.grade === gradeTerm;
+                
+                return matchSearch && matchCategory && matchGrade;
+            });
+
+            if(filteredData.length === 0) {
+                grid.innerHTML = '<p class="text-gray-500 col-span-2 lg:col-span-3 text-center text-sm mt-4">ไม่พบสินค้าที่คุณค้นหา</p>';
+                return;
+            }
+
+            filteredData.forEach(item => {
+                let basePrice = item.price_base || 0;
+                let tier1Price = item.price_tier1 || 0;
+                let tier2Price = item.price_tier2 || 0;
+                
+                let imgDisplay = item.image_url 
+                    ? `<img src="${item.image_url}" class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">` 
+                    : `<span class="text-gray-600 font-bold uppercase tracking-widest text-xs">${item.category || 'ITEM'}</span>`;
+
+                let gradeDisplay = item.grade && item.grade !== '-' ? `<div class="absolute top-1 right-1 bg-zPurple text-[10px] px-1 rounded text-white shadow-md border border-purple-500">${item.grade}</div>` : '';
+
+                const cardHTML = `
+                    <div class="bg-gray-900 rounded-lg p-3 cursor-pointer purple-glow transition-all duration-300 border border-gray-800 relative" 
+                         onclick="addToCart('${item.strain_name}', ${basePrice}, ${tier1Price}, ${tier2Price}, ${item.stock_weight}, '${item.sku}')">
+                        <div class="h-20 md:h-24 bg-black rounded border border-gray-700 mb-2 flex items-center justify-center overflow-hidden relative">
+                            ${imgDisplay}
+                            ${gradeDisplay}
+                        </div>
+                        <h2 class="text-sm md:text-base font-bold text-white mb-1 truncate">${item.strain_name}</h2>
+                        <div class="flex justify-between text-[10px] md:text-xs text-gray-400">
+                            <span class="${item.stock_weight > 0 ? 'text-neonGreen' : 'text-red-500'}">สต๊อก: ${item.stock_weight.toLocaleString()}g</span>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+
+        // --- ระบบสแกนและตะกร้าเหมือนเดิม ---
         function processScanResult(skuScanned) {
             skuScanned = skuScanned.trim().toUpperCase();
             if (!skuScanned) return;
