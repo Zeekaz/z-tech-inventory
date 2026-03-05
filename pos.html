@@ -6,6 +6,7 @@
     <title>Z-Tech | POS System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -28,6 +29,12 @@
         @keyframes flash { 0% { opacity: 0.5; transform: scale(0.98); } 100% { opacity: 1; transform: scale(1); } }
         .scan-flash { animation: scanGlow 0.3s ease-out; }
         @keyframes scanGlow { 0% { background-color: #39ff14; color: #000; } 100% { background-color: #000; color: #39ff14; } }
+        
+        /* สไตล์หน้าจอกล้อง */
+        #qr-reader { width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid #39ff14; display: none; margin-bottom: 15px; }
+        #qr-reader__scan_region { background: #000; }
+        #qr-reader__dashboard { background: #111; color: #fff; padding: 10px; }
+        #qr-reader__dashboard_section_csr button { background: #4a0e4e; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden">
@@ -42,9 +49,14 @@
     <div class="w-1/3 p-6 bg-black flex flex-col relative">
         <h2 class="text-2xl text-neonGreen font-bold mb-4 text-center tracking-wider">🛒 ORDER CART</h2>
         
-        <div class="mb-4">
-            <input type="text" id="scanner-input" placeholder="🔳 สแกน QR Code ที่นี่..." class="w-full bg-black border border-neonGreen text-neonGreen font-mono text-center tracking-widest p-3 rounded focus:outline-none focus:shadow-[0_0_15px_rgba(57,255,20,0.5)] transition-all" autofocus autocomplete="off">
+        <div class="flex gap-2 mb-4">
+            <input type="text" id="scanner-input" placeholder="🔳 ใช้ปืนสแกน..." class="w-2/3 bg-black border border-neonGreen text-neonGreen font-mono text-center tracking-widest p-3 rounded focus:outline-none focus:shadow-[0_0_15px_rgba(57,255,20,0.5)] transition-all" autocomplete="off">
+            <button onclick="toggleCamera()" class="w-1/3 bg-gray-800 hover:bg-gray-700 text-neonGreen border border-neonGreen rounded font-bold transition-colors">
+                📷 เปิดกล้อง
+            </button>
         </div>
+
+        <div id="qr-reader"></div>
 
         <div class="mb-4">
             <input type="text" id="customer-name" placeholder="ชื่อร้านค้า/ลูกค้า (จำเป็น)" class="w-full bg-gray-900 border border-zPurple text-white p-3 rounded focus:outline-none focus:border-neonGreen transition-colors">
@@ -92,6 +104,7 @@
         let cart = []; 
         let specialDiscount = 0;
         let globalInventory = []; 
+        let html5QrcodeScanner = null;
 
         async function loadImperialVault() {
             const grid = document.getElementById('product-grid');
@@ -141,29 +154,71 @@
             }
         }
 
+        // --- ระบบประมวลผล SKU จากการสแกน (ทั้งปืนและกล้อง) ---
+        function processScanResult(skuScanned) {
+            skuScanned = skuScanned.trim().toUpperCase();
+            if (!skuScanned) return;
+
+            let foundItem = globalInventory.find(item => item.sku && item.sku.toUpperCase() === skuScanned);
+            
+            if (foundItem) {
+                let basePrice = foundItem.price_base || 0;
+                let tier1Price = foundItem.price_tier1 || 0;
+                let tier2Price = foundItem.price_tier2 || 0;
+                
+                addToCart(foundItem.strain_name, basePrice, tier1Price, tier2Price, foundItem.stock_weight, foundItem.sku);
+                
+                // เอฟเฟกต์กระพริบ
+                const inputEl = document.getElementById('scanner-input');
+                inputEl.classList.add('scan-flash');
+                setTimeout(() => inputEl.classList.remove('scan-flash'), 300);
+            } else {
+                alert('❌ ไม่พบสินค้ารหัส [' + skuScanned + '] ในระบบค่ะ');
+            }
+            document.getElementById('scanner-input').value = '';
+        }
+
+        // จับเหตุการณ์ยิงปืนสแกน (Enter Key)
         document.getElementById('scanner-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                let skuScanned = this.value.trim().toUpperCase();
-                if (!skuScanned) return;
-
-                let foundItem = globalInventory.find(item => item.sku && item.sku.toUpperCase() === skuScanned);
-                
-                if (foundItem) {
-                    let basePrice = foundItem.price_base || 0;
-                    let tier1Price = foundItem.price_tier1 || 0;
-                    let tier2Price = foundItem.price_tier2 || 0;
-                    
-                    addToCart(foundItem.strain_name, basePrice, tier1Price, tier2Price, foundItem.stock_weight, foundItem.sku);
-                    
-                    this.classList.add('scan-flash');
-                    setTimeout(() => this.classList.remove('scan-flash'), 300);
-                } else {
-                    alert('❌ ไม่พบสินค้ารหัส [' + skuScanned + '] ในระบบค่ะ');
-                }
-                this.value = '';
+                processScanResult(this.value);
             }
         });
+
+        // --- ระบบกล้องมือถือ/แท็บเล็ต ---
+        function toggleCamera() {
+            const readerDiv = document.getElementById('qr-reader');
+            
+            if (readerDiv.style.display === 'block') {
+                // ปิดกล้อง
+                if(html5QrcodeScanner) {
+                    html5QrcodeScanner.clear();
+                    html5QrcodeScanner = null;
+                }
+                readerDiv.style.display = 'none';
+            } else {
+                // เปิดกล้อง
+                readerDiv.style.display = 'block';
+                html5QrcodeScanner = new Html5QrcodeScanner(
+                    "qr-reader", 
+                    { fps: 10, qrbox: {width: 250, height: 250} },
+                    /* verbose= */ false
+                );
+                html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // ปิดกล้องอัตโนมัติเมื่อสแกนติด
+            toggleCamera();
+            // นำรหัสไปประมวลผลเข้าตะกร้า
+            processScanResult(decodedText);
+        }
+
+        function onScanFailure(error) {
+            // ไม่ต้องทำอะไร ปล่อยให้มันหาต่อไปเงียบๆ
+        }
 
         function addToCart(name, base, t1, t2, stock, sku) {
             if (stock <= 0) return alert(`⚠️ สินค้าหมด: [${name}] ไม่มีสินค้าในคลังค่ะ`);
@@ -193,7 +248,7 @@
                                class="w-1/2 bg-black border border-gray-700 text-white p-2 rounded text-center focus:border-neonGreen focus:outline-none" 
                                value="${item.weight || ''}" 
                                oninput="updateWeightFast(${index}, this.value)" 
-                               max="${item.stock}" autofocus>
+                               max="${item.stock}">
                         <div class="w-1/2 bg-black flex flex-col justify-center items-center rounded border border-gray-700">
                             <span class="text-xs text-gray-500">ราคา/g</span>
                             <span id="price-display-${index}" class="text-white font-bold">฿${item.base}</span>
@@ -205,19 +260,15 @@
             calculateTotals();
         }
 
-        // ฟังก์ชันอัปเดตน้ำหนักแบบรวดเร็ว (ไม่ต้อง re-render ตะกร้า)
         function updateWeightFast(index, value) {
             let w = parseFloat(value);
             if (isNaN(w) || w < 0) w = 0;
-            
             if (w > cart[index].stock) {
                 alert(`⚠️ สินค้าไม่พอ! สต๊อก ${cart[index].name} มีเพียง ${cart[index].stock}g ค่ะ`);
-                // ถ้าเกินสต๊อก ค่อย re-render เพื่อรีเซ็ตค่า
                 cart[index].weight = cart[index].stock;
                 renderCart();
                 return;
             }
-            
             cart[index].weight = w;
             calculateTotals(); 
         }
