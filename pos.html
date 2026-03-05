@@ -36,14 +36,14 @@
 </head>
 <body class="h-screen flex flex-col md:flex-row overflow-hidden">
 
-    <div class="w-full md:w-2/3 h-1/2 md:h-full p-4 md:p-6 overflow-y-auto border-b md:border-b-0 md:border-r border-zPurple flex flex-col">
-        <div class="flex justify-between items-center mb-4 border-b border-gray-800 pb-2 shrink-0">
-            <h1 class="text-2xl md:text-3xl font-bold text-goldDark tracking-widest uppercase">
+    <div class="w-full md:w-2/3 h-1/2 md:h-full p-3 md:p-5 overflow-y-auto border-b md:border-b-0 md:border-r border-zPurple flex flex-col">
+        <div class="flex justify-between items-center mb-3 border-b border-gray-800 pb-2 shrink-0">
+            <h1 class="text-xl md:text-2xl font-bold text-goldDark tracking-widest uppercase">
                 🌑 Z-Tech Inventory
             </h1>
         </div>
 
-        <div class="flex flex-col gap-2 mb-4 shrink-0">
+        <div class="flex flex-col gap-2 mb-3 shrink-0">
             <div class="flex gap-2">
                 <input type="text" id="search-inventory" placeholder="🔍 ค้นหาสายพันธุ์, รหัส หรือ ฟาร์ม..." class="w-1/2 bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-sm" onkeyup="filterInventory()">
                 <select id="farm-filter" class="w-1/4 bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-sm" onchange="filterInventory()">
@@ -69,19 +69,19 @@
                 </select>
             </div>
             <div id="category-tabs" class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide pt-1">
-                <button onclick="setCategory('All')" id="btn-cat-All" class="px-4 py-1 rounded-full text-sm font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors">ทั้งหมด</button>
+                <button onclick="setCategory('All')" id="btn-cat-All" class="px-3 py-1 rounded-full text-xs font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors">ทั้งหมด</button>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 flex-grow overflow-y-auto content-start" id="product-grid"></div>
+        <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3 flex-grow overflow-y-auto content-start" id="product-grid"></div>
     </div>
 
     <div class="w-full md:w-1/3 h-1/2 md:h-full p-4 md:p-6 bg-black flex flex-col relative">
-        <h2 class="text-xl md:text-2xl text-neonGreen font-bold mb-3 text-center tracking-wider shrink-0">🛒 ORDER CART</h2>
+        <h2 class="text-lg md:text-xl text-neonGreen font-bold mb-3 text-center tracking-wider shrink-0">🛒 ORDER CART</h2>
         
         <div class="flex gap-2 mb-3 shrink-0">
-            <input type="text" id="scanner-input" placeholder="🔳 ใช้ปืนสแกน..." class="w-2/3 bg-black border border-neonGreen text-neonGreen font-mono text-center tracking-widest p-2 rounded focus:outline-none" autocomplete="off">
-            <button onclick="toggleCamera()" class="w-1/3 bg-gray-800 hover:bg-gray-700 text-neonGreen border border-neonGreen rounded font-bold text-sm">
+            <input type="text" id="scanner-input" placeholder="🔳 ใช้ปืนสแกน..." class="w-2/3 bg-black border border-neonGreen text-neonGreen font-mono text-center tracking-widest p-2 rounded focus:outline-none text-sm" autocomplete="off">
+            <button onclick="toggleCamera()" class="w-1/3 bg-gray-800 hover:bg-gray-700 text-neonGreen border border-neonGreen rounded font-bold text-xs">
                 📷 กล้อง
             </button>
         </div>
@@ -89,7 +89,8 @@
         <div id="qr-reader" class="shrink-0"></div>
 
         <div class="mb-3 shrink-0">
-            <input type="text" id="customer-name" placeholder="ชื่อร้านค้า/ลูกค้า" class="w-full bg-gray-900 border border-zPurple text-white p-2 rounded focus:outline-none focus:border-neonGreen">
+            <input type="text" id="customer-name" placeholder="ชื่อร้านค้า/ลูกค้า" class="w-full bg-gray-900 border border-zPurple text-white p-2 rounded focus:outline-none focus:border-neonGreen mb-2 text-sm">
+            <input type="text" id="customer-id" placeholder="เลขบัตร ปชช. / เลขใบอนุญาต (ภ.ท.28)" class="w-full bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-xs">
         </div>
 
         <div class="flex-grow overflow-y-auto mb-3 border-b border-gray-800 pb-2" id="cart-items">
@@ -97,30 +98,30 @@
         </div>
 
         <div class="bg-gray-900 p-3 rounded border border-gray-800 mb-3 shrink-0" id="summary-box">
-            <div class="flex justify-between text-gray-400 text-sm mb-1">
+            <div class="flex justify-between text-gray-400 text-xs mb-1">
                 <span>น้ำหนักรวม:</span>
                 <span id="total-grams" class="text-white font-bold">0 g</span>
             </div>
             
-            <div class="flex justify-between text-gray-400 text-sm mb-1">
+            <div class="flex justify-between text-gray-400 text-xs mb-1">
                 <span>ยอดก่อนลด:</span>
                 <span id="subtotal-price" class="text-white">฿0.00</span>
             </div>
 
-            <div class="flex justify-between text-red-500 hover:text-red-400 mb-2 pb-1 border-b border-gray-700 cursor-pointer text-sm" onclick="promptDiscount()">
+            <div class="flex justify-between text-red-500 hover:text-red-400 mb-2 pb-1 border-b border-gray-700 cursor-pointer text-xs" onclick="promptDiscount()">
                 <span class="font-bold">🎟️ ส่วนลด (คลิก):</span>
                 <span id="discount-display" class="font-bold">- ฿0.00</span>
             </div>
 
-            <div class="flex justify-between text-base font-bold items-end mt-1">
+            <div class="flex justify-between text-sm font-bold items-end mt-1">
                 <span class="text-goldDark">ยอดสุทธิ:</span>
                 <div class="text-right">
-                    <span id="total-price" class="text-white text-2xl">฿0.00</span>
+                    <span id="total-price" class="text-white text-xl">฿0.00</span>
                 </div>
             </div>
         </div>
 
-        <button id="checkout-btn" class="w-full bg-zPurple hover:bg-purple-900 text-white font-bold py-3 rounded-lg border border-purple-500 neon-border text-base shrink-0" onclick="checkout()">
+        <button id="checkout-btn" class="w-full bg-zPurple hover:bg-purple-900 text-white font-bold py-2 md:py-3 rounded-lg border border-purple-500 neon-border text-sm shrink-0" onclick="checkout()">
             ✅ ยืนยันคำสั่งซื้อ
         </button>
     </div>
@@ -138,26 +139,21 @@
 
         async function loadImperialVault() {
             const grid = document.getElementById('product-grid');
-            grid.innerHTML = '<p class="text-zPurple animate-pulse col-span-2 lg:col-span-3 text-center tracking-widest text-sm">⏳ โหลดข้อมูล...</p>';
+            grid.innerHTML = '<p class="text-zPurple animate-pulse col-span-3 lg:col-span-5 text-center tracking-widest text-sm">⏳ โหลดข้อมูล...</p>';
 
             try {
-                // ดึงข้อมูลและให้ Database เรียงตามการอัปเดตล่าสุดมาก่อน
                 const { data, error } = await _supabase.from('ztech_inventory').select('*').order('last_updated', { ascending: false });
                 if (error) throw error;
                 
                 globalInventory = data || []; 
 
-                // 🧠 Loric การจัดเรียงระดับ Wongnai POS:
-                // 1. มีสต๊อก (weight > 0) ต้องอยู่บน, สินค้าหมด (weight <= 0) ต้องอยู่ล่าง
-                // 2. ถ้าสถานะสต๊อกเท่ากัน ให้ยึดตามเวลาที่มีการขยับล่าสุด (last_updated)
                 globalInventory.sort((a, b) => {
                     let aHasStock = a.stock_weight > 0 ? 1 : 0;
                     let bHasStock = b.stock_weight > 0 ? 1 : 0;
                     
                     if (aHasStock !== bHasStock) {
-                        return bHasStock - aHasStock; // ผลักของหมดลงไปข้างล่าง
+                        return bHasStock - aHasStock; 
                     }
-                    // ถ้าสถานะสต๊อกเหมือนกัน ให้เรียงตามเวลาล่าสุด
                     let dateA = new Date(a.last_updated || 0).getTime();
                     let dateB = new Date(b.last_updated || 0).getTime();
                     return dateB - dateA;
@@ -171,7 +167,7 @@
                 buildCategoryTabs();
                 filterInventory(); 
             } catch (error) {
-                grid.innerHTML = '<p class="text-red-500 col-span-2 lg:col-span-3 text-center text-sm">⚠️ ระบบขัดข้อง</p>';
+                grid.innerHTML = '<p class="text-red-500 col-span-3 lg:col-span-5 text-center text-sm">⚠️ ระบบขัดข้อง</p>';
             }
         }
 
@@ -179,7 +175,7 @@
             const tabContainer = document.getElementById('category-tabs');
             const uniqueCats = [...new Set(globalInventory.map(item => item.category).filter(c => c))];
             
-            tabContainer.innerHTML = `<button onclick="setCategory('All')" id="btn-cat-All" class="px-4 py-1 rounded-full text-sm font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors">ทั้งหมด</button>`;
+            tabContainer.innerHTML = `<button onclick="setCategory('All')" id="btn-cat-All" class="px-3 py-1 rounded-full text-xs font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors">ทั้งหมด</button>`;
             
             uniqueCats.forEach(cat => {
                 let icon = '🏷️';
@@ -187,7 +183,7 @@
                 if(cat === 'ใต้เครื่อง') icon = '⚙️';
                 if(cat === 'ใบทริม') icon = '🍃';
                 
-                const btnHTML = `<button onclick="setCategory('${cat}')" id="btn-cat-${cat}" class="px-4 py-1 rounded-full text-sm font-bold bg-gray-900 text-gray-400 border border-gray-700 hover:text-white whitespace-nowrap transition-colors">${icon} ${cat}</button>`;
+                const btnHTML = `<button onclick="setCategory('${cat}')" id="btn-cat-${cat}" class="px-3 py-1 rounded-full text-xs font-bold bg-gray-900 text-gray-400 border border-gray-700 hover:text-white whitespace-nowrap transition-colors">${icon} ${cat}</button>`;
                 tabContainer.insertAdjacentHTML('beforeend', btnHTML);
             });
             updateTabColors();
@@ -204,9 +200,9 @@
             for(let btn of tabs) {
                 let catId = btn.id.replace('btn-cat-', '');
                 if(catId === currentCategory) {
-                    btn.className = "px-4 py-1 rounded-full text-sm font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors";
+                    btn.className = "px-3 py-1 rounded-full text-xs font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors";
                 } else {
-                    btn.className = "px-4 py-1 rounded-full text-sm font-bold bg-gray-900 text-gray-400 border border-gray-700 hover:text-white whitespace-nowrap transition-colors";
+                    btn.className = "px-3 py-1 rounded-full text-xs font-bold bg-gray-900 text-gray-400 border border-gray-700 hover:text-white whitespace-nowrap transition-colors";
                 }
             }
         }
@@ -235,7 +231,7 @@
             });
 
             if(filteredData.length === 0) {
-                grid.innerHTML = '<p class="text-gray-500 col-span-2 lg:col-span-3 text-center text-sm mt-4">ไม่พบสินค้าที่คุณค้นหา</p>';
+                grid.innerHTML = '<p class="text-gray-500 col-span-3 lg:col-span-5 text-center text-sm mt-4">ไม่พบสินค้าที่คุณค้นหา</p>';
                 return;
             }
 
@@ -246,26 +242,26 @@
                 
                 let imgDisplay = item.image_url 
                     ? `<img src="${item.image_url}" class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">` 
-                    : `<span class="text-gray-600 font-bold uppercase tracking-widest text-xs">${item.category || 'ITEM'}</span>`;
+                    : `<span class="text-gray-600 font-bold uppercase tracking-widest text-[10px]">${item.category || 'ITEM'}</span>`;
 
-                let gradeDisplay = item.grade && item.grade !== '-' ? `<div class="absolute top-1 right-1 bg-zPurple text-[10px] px-2 py-0.5 rounded text-white shadow-md border border-purple-500">${item.grade}</div>` : '';
+                let gradeDisplay = item.grade && item.grade !== '-' ? `<div class="absolute top-1 right-1 bg-zPurple text-[9px] px-1.5 py-0.5 rounded text-white shadow-md border border-purple-500">${item.grade}</div>` : '';
 
-                // 🌟 ปรับแต่ง UI สำหรับของหมดสต๊อก
                 let isOutOfStock = item.stock_weight <= 0;
                 let outOfStockClass = isOutOfStock ? "opacity-50 grayscale cursor-not-allowed" : "cursor-pointer purple-glow";
                 let stockTextClass = isOutOfStock ? "text-red-500 font-bold" : "text-neonGreen font-bold";
-                let stockLabel = isOutOfStock ? "❌ สินค้าหมด" : `สต๊อก: ${item.stock_weight.toLocaleString()}g`;
+                let stockLabel = isOutOfStock ? "❌ หมด" : `สต๊อก: ${item.stock_weight.toLocaleString()}g`;
 
+                // 🌟 ปรับขนาด Card ให้กะทัดรัดขึ้น Padding น้อยลง Font เล็กลง (Wongnai Style)
                 const cardHTML = `
-                    <div class="bg-gray-900 rounded-lg p-3 transition-all duration-300 border border-gray-800 relative flex flex-col h-full ${outOfStockClass}" 
+                    <div class="bg-gray-900 rounded p-2 transition-all duration-300 border border-gray-800 relative flex flex-col h-full ${outOfStockClass}" 
                          onclick="addToCart('${item.strain_name}', ${basePrice}, ${tier1Price}, ${tier2Price}, ${item.stock_weight}, '${item.sku}')">
-                        <div class="aspect-square w-full bg-black rounded border border-gray-700 mb-2 flex items-center justify-center overflow-hidden relative shrink-0">
+                        <div class="aspect-square w-full bg-black rounded border border-gray-700 mb-1 flex items-center justify-center overflow-hidden relative shrink-0">
                             ${imgDisplay}
                             ${gradeDisplay}
                         </div>
                         <div class="flex-grow flex flex-col justify-end">
-                            <h2 class="text-sm md:text-base font-bold text-white mb-1 leading-tight line-clamp-2">${item.strain_name}</h2>
-                            <div class="flex justify-between items-end text-[10px] md:text-xs text-gray-400 mt-auto pt-1 border-t border-gray-800">
+                            <h2 class="text-[11px] md:text-xs font-bold text-white mb-1 leading-tight line-clamp-2">${item.strain_name}</h2>
+                            <div class="flex justify-between items-end text-[9px] md:text-[10px] text-gray-400 mt-auto pt-1 border-t border-gray-800">
                                 <span class="${stockTextClass}">${stockLabel}</span>
                             </div>
                         </div>
@@ -329,19 +325,19 @@
             cartDiv.innerHTML = '';
             cart.forEach((item, index) => {
                 const itemHTML = `
-                <div class="bg-gray-900 p-2 md:p-3 rounded mb-2 border border-gray-800">
+                <div class="bg-gray-900 p-2 rounded mb-2 border border-gray-800">
                     <div class="flex justify-between items-center mb-1">
-                        <span class="font-bold text-white text-xs md:text-sm truncate w-3/4">${item.name} <span class="text-[10px] text-gray-500">(${item.stock}g)</span></span>
-                        <button class="text-red-500 text-sm" onclick="removeFromCart(${index})">✖</button>
+                        <span class="font-bold text-white text-xs truncate w-3/4">${item.name} <span class="text-[9px] text-gray-500">(${item.stock}g)</span></span>
+                        <button class="text-red-500 text-xs" onclick="removeFromCart(${index})">✖</button>
                     </div>
                     <div class="flex gap-1">
                         <input type="number" step="any" placeholder="กรัม" 
-                               class="w-1/2 bg-black border border-gray-700 text-white p-1 md:p-2 rounded text-center text-sm focus:border-neonGreen outline-none" 
+                               class="w-1/2 bg-black border border-gray-700 text-white p-1 rounded text-center text-xs focus:border-neonGreen outline-none" 
                                value="${item.weight || ''}" 
                                oninput="updateWeightFast(${index}, this.value)" 
                                max="${item.stock}">
-                        <div class="w-1/2 bg-black flex flex-col justify-center items-center rounded border border-gray-700">
-                            <span id="price-display-${index}" class="text-white font-bold text-sm">฿${item.base}</span>
+                        <div class="w-1/2 bg-black flex flex-col justify-center items-center rounded border border-gray-700 py-1">
+                            <span id="price-display-${index}" class="text-white font-bold text-xs">฿${item.base}</span>
                         </div>
                     </div>
                 </div>`;
@@ -393,7 +389,7 @@
                 let priceDisplay = document.getElementById(`price-display-${index}`);
                 if (priceDisplay) {
                     priceDisplay.innerText = `฿${activePrice}`;
-                    priceDisplay.className = `${activeColor} font-bold text-sm`;
+                    priceDisplay.className = `${activeColor} font-bold text-xs`;
                 }
             });
 
@@ -406,14 +402,21 @@
             
             const totalPriceEl = document.getElementById('total-price');
             totalPriceEl.innerText = `฿${finalPrice.toLocaleString()}`;
-            totalPriceEl.className = `${activeColor} text-2xl`;
+            totalPriceEl.className = `${activeColor} text-xl`;
         }
 
-        async function sendLineSlip(customer, cartItems, totalW, subtotalP, finalP, discount) {
+        async function sendLineSlip(customer, customerId, cartItems, totalW, subtotalP, finalP, discount) {
             const token = '2mqUKe/Rb3dM/vKhOPvuXB8ag0eCS7t8ITrg5+NRiTWKXhgeA/aypMOZc5aDDvpufwkkeioOULxPu7/57MGs7Y1HGGfMW7xZd9vQD0lyY5DID8X9dfYv6AYHm3q1vqLDHzsrPO51asEQDb7stjyMSgdB04t89/1O/w1cDnyilFU=';
             const userId = 'Cbf93761b1ac023b9fbe28afa7efbfb16'; 
             let itemList = cartItems.map(item => `▪️ ${item.name}: ${item.weight}g`).join('\n');
-            let msgText = `🌑 Z-Tech Management 🌑\n\n✅ ยืนยันคำสั่งซื้อ\n━━━━━━━━━━━━━━\n👤 ลูกค้า: ${customer}\n⚖️ น้ำหนักรวม: ${totalW} g\n💰 ยอดรวม: ฿${subtotalP}\n`;
+            let msgText = `🌑 Z-Tech Management 🌑\n\n✅ ยืนยันคำสั่งซื้อ\n━━━━━━━━━━━━━━\n👤 ลูกค้า: ${customer}\n`;
+            
+            if (customerId) {
+                msgText += `🪪 รหัส/ใบอนุญาต: ${customerId}\n`;
+            }
+
+            msgText += `⚖️ น้ำหนักรวม: ${totalW} g\n💰 ยอดรวม: ฿${subtotalP}\n`;
+            
             if (discount > 0) msgText += `🎟️ ส่วนลด: -฿${discount}\n`;
             msgText += `🔥 ยอดสุทธิ: ฿${finalP}\n━━━━━━━━━━━━━━\n📦 รายการ:\n${itemList}`;
 
@@ -425,9 +428,12 @@
 
         async function checkout() {
             let customer = document.getElementById('customer-name').value.trim();
-            if(!customer) return alert("⚠️ ระบุชื่อลูกค้า!");
+            let customerId = document.getElementById('customer-id').value.trim(); // รับค่าเลข ปชช.
+
+            if(!customer) return alert("⚠️ กรุณาระบุชื่อลูกค้า!");
+            
             let validCart = cart.filter(item => item.weight > 0);
-            if(validCart.length === 0) return alert("⚠️ ตะกร้าว่าง!");
+            if(validCart.length === 0) return alert("⚠️ ตะกร้าว่างเปล่า!");
 
             const btn = document.getElementById('checkout-btn');
             btn.innerHTML = "⏳ กำลังบันทึก...";
@@ -449,14 +455,26 @@
                 });
                 let finalP = Math.max(0, subtotalP - specialDiscount);
 
-                await _supabase.from('ztech_orders').insert([{ cart_items: validCart, total_weight: totalW, seller_name: customer, discount_amount: specialDiscount, net_price: finalP }]);
-                await sendLineSlip(customer, validCart, totalW, subtotalP, finalP, specialDiscount);
+                // บันทึก order พร้อม customer_id
+                await _supabase.from('ztech_orders').insert([{ 
+                    cart_items: validCart, 
+                    total_weight: totalW, 
+                    seller_name: customer, 
+                    customer_id: customerId, // ตัวแปรใหม่
+                    discount_amount: specialDiscount, 
+                    net_price: finalP 
+                }]);
+
+                await sendLineSlip(customer, customerId, validCart, totalW, subtotalP, finalP, specialDiscount);
 
                 alert(`✅ ปิดการขายให้ [${customer}] สำเร็จ!`);
-                cart = []; specialDiscount = 0; document.getElementById('customer-name').value = '';
+                cart = []; specialDiscount = 0; 
+                document.getElementById('customer-name').value = '';
+                document.getElementById('customer-id').value = '';
                 renderCart(); loadImperialVault(); 
             } catch (error) {
                 alert("❌ ขัดข้อง: " + error.message);
+                console.error(error);
             } finally {
                 btn.innerHTML = "✅ ยืนยันคำสั่งซื้อ"; btn.disabled = false;
             }
