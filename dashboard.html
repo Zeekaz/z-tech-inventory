@@ -47,6 +47,9 @@
         
         input[type="file"]::file-selector-button { background: #4a0e4e; color: white; border: 1px solid #8b008b; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 15px; transition: 0.2s; }
         input[type="file"]::file-selector-button:hover { background: #6a1b6a; }
+        
+        /* สไตล์พิเศษสำหรับคำอธิบายใต้ช่องกรอก */
+        .help-text { font-size: 11px; color: #888; margin-top: 3px; display: block; }
     </style>
 </head>
 <body>
@@ -97,7 +100,7 @@
                 </tr>
             </thead>
             <tbody id="product-list">
-                <tr><td colspan="8" style="text-align:center; padding: 20px;">กำลังเปิดประตูคลังแห่งความมืด...</td></tr>
+                <tr><td colspan="8" style="text-align:center; padding: 20px;">กำลังดึงข้อมูลคลังสินค้า...</td></tr>
             </tbody>
         </table>
     </div>
@@ -165,14 +168,17 @@
                 <div class="form-group">
                     <label>ราคาปลีก (1g)</label>
                     <input type="number" step="any" id="f_base" class="form-input" placeholder="0">
+                    <span class="help-text">*ระบุราคาต่อ 1 กรัม</span>
                 </div>
                 <div class="form-group">
-                    <label>ราคาส่ง 1 ขีด (100g)</label>
+                    <label>ราคาส่ง (เรท 1 ขีด)</label>
                     <input type="number" step="any" id="f_t1" class="form-input" placeholder="0">
+                    <span class="help-text">*ระบุราคาต่อ 1 กรัม</span>
                 </div>
                 <div class="form-group">
-                    <label>ราคาส่ง 1 กิโลฯ (1KG)</label>
+                    <label>ราคาส่ง (เรท 1 กิโลฯ)</label>
                     <input type="number" step="any" id="f_t2" class="form-input" placeholder="0">
+                    <span class="help-text">*ระบุราคาต่อ 1 กรัม</span>
                 </div>
             </div>
 
@@ -181,7 +187,7 @@
                 <input type="number" step="any" id="f_stock" class="form-input" placeholder="0" style="border-color: #39ff14; font-weight: bold;">
             </div>
 
-            <button class="btn-submit" id="save-btn" onclick="saveNewProduct()">🩸 บันทึกข้อมูลลงคลัง (Save to Vault)</button>
+            <button class="btn-submit" id="save-btn" onclick="saveNewProduct()">🩸 บันทึกข้อมูลลงคลัง</button>
         </div>
     </div>
 
@@ -329,10 +335,10 @@
 
             const btn = document.getElementById('save-btn');
             const fileInput = document.getElementById('f_image_file');
-            const file = fileInput.files[0];
+            const file = fileInput.files ? fileInput.files[0] : null;
             let finalImageUrl = null;
 
-            btn.innerHTML = "⏳ กำลังอัปโหลดข้อมูลลงคลัง...";
+            btn.innerHTML = "⏳ กำลังบันทึกข้อมูล...";
             btn.disabled = true;
 
             try {
@@ -344,13 +350,16 @@
                         .from('ztech_images')
                         .upload(fileName, file);
 
-                    if (uploadErr) throw uploadErr;
-
-                    const { data: publicUrlData } = _supabase.storage
-                        .from('ztech_images')
-                        .getPublicUrl(fileName);
-                        
-                    finalImageUrl = publicUrlData.publicUrl;
+                    if (uploadErr) {
+                        console.warn("Storage upload error:", uploadErr);
+                        alert("⚠️ ไม่สามารถอัปโหลดรูปได้ (อาจจะยังไม่ได้เปิด Storage) แต่ข้อมูลอื่นจะถูกบันทึกค่ะ");
+                    } else {
+                        const { data: publicUrlData } = _supabase.storage
+                            .from('ztech_images')
+                            .getPublicUrl(fileName);
+                            
+                        finalImageUrl = publicUrlData.publicUrl;
+                    }
                 }
 
                 const { error } = await _supabase.from('ztech_inventory').insert([{
@@ -358,7 +367,14 @@
                     cost_price, price_base, price_tier1, price_tier2, stock_weight
                 }]);
 
-                if (error) throw error;
+                if (error) {
+                    console.error("Database Error:", error);
+                    // จับ Error RLS และแปลงให้ลูกค้าเข้าใจง่าย
+                    if(error.message.includes('row-level security')) {
+                        throw new Error("ระบบฐานข้อมูลถูกล็อก (RLS Policy) กรุณาเข้าไปตั้งค่าสิทธิ์การเข้าถึง (Policies) ใน Supabase ให้เป็น 'Enable read and write access' สำหรับตาราง ztech_inventory ค่ะ");
+                    }
+                    throw error;
+                }
 
                 alert("✅ เพิ่มรายการสินค้าใหม่ลงคลังสำเร็จแล้วค่ะ!");
                 closeAddModal();
@@ -374,7 +390,7 @@
                 console.error(error);
                 alert("❌ เกิดข้อผิดพลาด: " + error.message);
             } finally {
-                btn.innerHTML = "🩸 บันทึกข้อมูลลงคลัง (Save to Vault)";
+                btn.innerHTML = "🩸 บันทึกข้อมูลลงคลัง";
                 btn.disabled = false;
             }
         }
