@@ -45,9 +45,20 @@
 
         <div class="flex flex-col gap-2 mb-4 shrink-0">
             <div class="flex gap-2">
-                <input type="text" id="search-inventory" placeholder="🔍 ค้นหาสายพันธุ์ / รหัส..." class="w-3/4 bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-sm" onkeyup="filterInventory()">
-                <select id="grade-filter" class="w-1/4 bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-sm" onchange="filterInventory()">
-                    <option value="">ทุกเกรด</option>
+                <input type="text" id="search-inventory" placeholder="🔍 ค้นหาสายพันธุ์, รหัส หรือ ฟาร์ม..." class="w-1/2 bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-sm" onkeyup="filterInventory()">
+                <select id="farm-filter" class="w-1/4 bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-sm" onchange="filterInventory()">
+                    <option value="">-- ทุกฟาร์ม --</option>
+                </select>
+            </div>
+            <div class="flex gap-2">
+                <select id="category-filter" class="w-1/2 bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-sm" onchange="filterInventory()">
+                    <option value="">-- ทุกประเภท --</option>
+                    <option value="ดอก">ดอก (Flower)</option>
+                    <option value="ใต้เครื่อง">ใต้เครื่อง (Powder)</option>
+                    <option value="ใบทริม">ใบทริม (Trim)</option>
+                </select>
+                <select id="grade-filter" class="w-1/2 bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-sm" onchange="filterInventory()">
+                    <option value="">-- ทุกเกรด --</option>
                     <option value="TOP">TOP</option>
                     <option value="Mid">Mid</option>
                     <option value="Pop">Pop</option>
@@ -57,9 +68,6 @@
                     <option value="-">-</option>
                 </select>
             </div>
-            <div id="category-tabs" class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide pt-1">
-                <button onclick="setCategory('All')" id="btn-cat-All" class="px-4 py-1 rounded-full text-sm font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors">ทั้งหมด</button>
-                </div>
         </div>
 
         <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 flex-grow overflow-y-auto content-start" id="product-grid"></div>
@@ -122,7 +130,6 @@
         let cart = []; 
         let specialDiscount = 0;
         let globalInventory = []; 
-        let currentCategory = 'All'; 
         let html5QrcodeScanner = null;
 
         async function loadImperialVault() {
@@ -134,72 +141,40 @@
                 if (error) throw error;
                 
                 globalInventory = data || []; 
-                buildCategoryTabs(); // สร้างปุ่มหมวดหมู่จากข้อมูลจริง
-                filterInventory(); // เรียกฟังก์ชันวาดกริด (ซึ่งรวมระบบค้นหาแล้ว)
+                
+                // อัปเดตรายการฟาร์ม
+                const farmSelect = document.getElementById('farm-filter');
+                const uniqueFarms = [...new Set(globalInventory.map(item => item.farm_name).filter(name => name))];
+                farmSelect.innerHTML = '<option value="">-- ทุกฟาร์ม --</option>' + 
+                                       uniqueFarms.map(farm => `<option value="${farm}">${farm}</option>`).join('');
+
+                filterInventory(); // เรียกใช้ฟังก์ชันกรองเพื่อแสดงผลครั้งแรก
             } catch (error) {
                 grid.innerHTML = '<p class="text-red-500 col-span-2 lg:col-span-3 text-center text-sm">⚠️ ระบบขัดข้อง</p>';
             }
         }
 
-        // ฟังก์ชันสร้างปุ่มหมวดหมู่ให้อัตโนมัติตามที่มีในฐานข้อมูล
-        function buildCategoryTabs() {
-            const tabContainer = document.getElementById('category-tabs');
-            
-            // ดึงหมวดหมู่ที่ไม่ซ้ำกันออกมา
-            const uniqueCats = [...new Set(globalInventory.map(item => item.category).filter(c => c))];
-            
-            // ล้างปุ่มเก่า (เก็บปุ่ม All ไว้)
-            tabContainer.innerHTML = `<button onclick="setCategory('All')" id="btn-cat-All" class="px-4 py-1 rounded-full text-sm font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors">ทั้งหมด</button>`;
-            
-            // สร้างปุ่มใหม่
-            uniqueCats.forEach(cat => {
-                let icon = '🏷️';
-                if(cat === 'ดอก') icon = '🌸';
-                if(cat === 'ใต้เครื่อง') icon = '⚙️';
-                if(cat === 'ใบทริม') icon = '🍃';
-                
-                const btnHTML = `<button onclick="setCategory('${cat}')" id="btn-cat-${cat}" class="px-4 py-1 rounded-full text-sm font-bold bg-gray-900 text-gray-400 border border-gray-700 hover:text-white whitespace-nowrap transition-colors">${icon} ${cat}</button>`;
-                tabContainer.insertAdjacentHTML('beforeend', btnHTML);
-            });
-            
-            // ตั้งค่าสีปุ่มให้ตรงกับหมวดปัจจุบัน
-            updateTabColors();
-        }
-
-        function setCategory(cat) {
-            currentCategory = cat;
-            updateTabColors();
-            filterInventory();
-        }
-
-        function updateTabColors() {
-            const tabs = document.getElementById('category-tabs').children;
-            for(let btn of tabs) {
-                let catId = btn.id.replace('btn-cat-', '');
-                if(catId === currentCategory) {
-                    btn.className = "px-4 py-1 rounded-full text-sm font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors";
-                } else {
-                    btn.className = "px-4 py-1 rounded-full text-sm font-bold bg-gray-900 text-gray-400 border border-gray-700 hover:text-white whitespace-nowrap transition-colors";
-                }
-            }
-        }
-
-        // ฟังก์ชันตัวกรองหลัก (Search + Category + Grade)
+        // ฟังก์ชันตัวกรองหลัก (Search + Category + Grade + Farm)
         function filterInventory() {
             const grid = document.getElementById('product-grid');
             grid.innerHTML = '';
 
             const searchTerm = document.getElementById('search-inventory').value.toLowerCase();
+            const farmTerm = document.getElementById('farm-filter').value;
+            const categoryTerm = document.getElementById('category-filter').value;
             const gradeTerm = document.getElementById('grade-filter').value;
 
-            // กรองข้อมูลผ่านเงื่อนไขทั้ง 3 ด่าน
             let filteredData = globalInventory.filter(item => {
+                const farmNameStr = item.farm_name ? item.farm_name.toLowerCase() : "";
                 const matchSearch = item.strain_name.toLowerCase().includes(searchTerm) || 
-                                    (item.sku && item.sku.toLowerCase().includes(searchTerm));
-                const matchCategory = currentCategory === 'All' || item.category === currentCategory;
-                const matchGrade = gradeTerm === '' || item.grade === gradeTerm;
+                                    (item.sku && item.sku.toLowerCase().includes(searchTerm)) ||
+                                    farmNameStr.includes(searchTerm);
                 
-                return matchSearch && matchCategory && matchGrade;
+                const matchFarm = farmTerm === "" || item.farm_name === farmTerm;
+                const matchCategory = categoryTerm === "" || item.category === categoryTerm;
+                const matchGrade = gradeTerm === "" || item.grade === gradeTerm;
+                
+                return matchSearch && matchFarm && matchCategory && matchGrade;
             });
 
             if(filteredData.length === 0) {
@@ -235,7 +210,7 @@
             });
         }
 
-        // --- ระบบสแกนและตะกร้าเหมือนเดิม ---
+        // --- ระบบสแกนและตะกร้า ---
         function processScanResult(skuScanned) {
             skuScanned = skuScanned.trim().toUpperCase();
             if (!skuScanned) return;
