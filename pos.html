@@ -192,7 +192,7 @@
                         <input type="number" step="any" placeholder="จำนวน (g)" 
                                class="w-1/2 bg-black border border-gray-700 text-white p-2 rounded text-center focus:border-neonGreen focus:outline-none" 
                                value="${item.weight || ''}" 
-                               oninput="updateWeight(${index}, this.value)" 
+                               oninput="updateWeightFast(${index}, this.value)" 
                                max="${item.stock}" autofocus>
                         <div class="w-1/2 bg-black flex flex-col justify-center items-center rounded border border-gray-700">
                             <span class="text-xs text-gray-500">ราคา/g</span>
@@ -205,16 +205,21 @@
             calculateTotals();
         }
 
-        function updateWeight(index, value) {
+        // ฟังก์ชันอัปเดตน้ำหนักแบบรวดเร็ว (ไม่ต้อง re-render ตะกร้า)
+        function updateWeightFast(index, value) {
             let w = parseFloat(value);
             if (isNaN(w) || w < 0) w = 0;
+            
             if (w > cart[index].stock) {
                 alert(`⚠️ สินค้าไม่พอ! สต๊อก ${cart[index].name} มีเพียง ${cart[index].stock}g ค่ะ`);
-                w = cart[index].stock;
+                // ถ้าเกินสต๊อก ค่อย re-render เพื่อรีเซ็ตค่า
+                cart[index].weight = cart[index].stock;
+                renderCart();
+                return;
             }
+            
             cart[index].weight = w;
-            calculateTotals();
-            renderCart();
+            calculateTotals(); 
         }
 
         function removeFromCart(index) {
@@ -286,10 +291,9 @@
             document.getElementById('summary-box').className = `bg-gray-900 p-5 rounded border ${boxBorder} mb-4 transition-all duration-300 shadow-lg`;
         }
 
-        // 📍 จุดที่บอสสามารถแก้ไขคำพูดในใบเสร็จ/สลิปได้
         async function sendLineSlip(customer, cartItems, totalW, subtotalP, finalP, discount) {
             const token = '2mqUKe/Rb3dM/vKhOPvuXB8ag0eCS7t8ITrg5+NRiTWKXhgeA/aypMOZc5aDDvpufwkkeioOULxPu7/57MGs7Y1HGGfMW7xZd9vQD0lyY5DID8X9dfYv6AYHm3q1vqLDHzsrPO51asEQDb7stjyMSgdB04t89/1O/w1cDnyilFU=';
-            const userId = 'Cbf93761b1ac023b9fbe28afa7efbfb16'; // กลุ่ม Highbuds
+            const userId = 'Cbf93761b1ac023b9fbe28afa7efbfb16'; 
 
             let itemList = cartItems.map(item => `▪️ ${item.name}: ${item.weight}g`).join('\n');
             
