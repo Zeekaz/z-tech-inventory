@@ -10,12 +10,23 @@
         .container { max-width: 1050px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 8px; background: #111; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
         h1 { color: #d4af37; text-align: center; font-size: 26px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
         
-        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; border-radius: 4px; }
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; border-radius: 4px; position: relative; }
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
         th { border-bottom: 2px solid #d4af37; padding: 12px; text-align: left; color: #d4af37; font-size: 15px; white-space: nowrap; cursor: pointer; transition: 0.2s; user-select: none; }
         th:hover { background: rgba(212, 175, 55, 0.1); }
         td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; vertical-align: middle; white-space: nowrap; }
         
+        /* 🌟 Sticky Action Column: ล็อกคอลัมน์สุดท้ายให้ติดขอบจอเสมอ */
+        th:last-child, td:last-child {
+            position: sticky;
+            right: 0;
+            background-color: #111;
+            z-index: 2;
+            border-left: 2px solid #333;
+        }
+        thead th:last-child { background-color: #050505; z-index: 3; }
+        tr:hover td:last-child { background-color: #1a1a1a; }
+
         .badge { background: #333; color: #d4af37; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; border: 1px solid #d4af37; }
         
         .btn-create { display: inline-block; padding: 12px 24px; background: #d4af37; color: #000; text-decoration: none; font-weight: bold; font-size: 16px; border-radius: 5px; border: 2px solid #b5952f; cursor: pointer; transition: 0.2s; white-space: nowrap; }
@@ -84,16 +95,20 @@
             </select>
             <select id="category-filter" class="filter-input" onchange="filterTable()">
                 <option value="">-- ทุกประเภท --</option>
-                <option value="ดอก">ดอก</option>
-                <option value="ใต้เครื่อง">ใต้เครื่อง</option>
-                <option value="ใบทริม">ใบทริม</option>
+                <option value="ดอก">ดอก (Flower)</option>
+                <option value="ผง">ผง (Powder)</option>
+                <option value="ใต้เครื่อง">ใต้เครื่อง (Kief)</option>
+                <option value="ใบทริม">ใบทริม (Trim)</option>
+                <option value="ไฟน้อลทริม">ไฟน้อลทริม (Final Trim)</option>
             </select>
             <select id="grade-filter" class="filter-input" onchange="filterTable()">
                 <option value="">-- ทุกเกรด --</option>
-                <option value="TOP">TOP</option>
+                <option value="Top">Top</option>
                 <option value="Mid">Mid</option>
                 <option value="Pop">Pop</option>
                 <option value="Mini-pop">Mini-pop</option>
+                <option value="Mixed">Mixed</option>
+                <option value="Other">Other</option>
                 <option value="-">-</option>
             </select>
         </div>
@@ -109,7 +124,7 @@
                         <th onclick="sortTable('grade')">เกรด ↕</th>
                         <th onclick="sortTable('farm_name')">รับจากฟาร์ม ↕</th>
                         <th onclick="sortTable('stock_weight')">สต๊อก (g) ↕</th>
-                        <th style="text-align:center;">Action</th>
+                        <th style="text-align:center;">จัดการ (Action)</th>
                     </tr>
                 </thead>
                 <tbody id="product-list">
@@ -144,14 +159,16 @@
                     <label>ประเภท</label>
                     <select id="f_category" class="form-input" onchange="toggleGrade()">
                         <option value="ดอก">ดอก (Flower)</option>
-                        <option value="ใต้เครื่อง">ใต้เครื่อง (Powder)</option>
+                        <option value="ผง">ผง (Powder)</option>
+                        <option value="ใต้เครื่อง">ใต้เครื่อง (Kief)</option>
                         <option value="ใบทริม">ใบทริม (Trim)</option>
+                        <option value="ไฟน้อลทริม">ไฟน้อลทริม (Final Trim)</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>เกรด (เฉพาะดอก)</label>
                     <select id="f_grade" class="form-input">
-                        <option value="TOP">TOP</option>
+                        <option value="Top">Top</option>
                         <option value="Mid">Mid</option>
                         <option value="Pop">Pop</option>
                         <option value="Mini-pop">Mini-pop</option>
@@ -193,7 +210,7 @@
             <div class="grid-2" style="margin-top: 10px;">
                 <div class="form-group">
                     <label style="color: #39ff14;">⚖️ สต๊อกแรกเข้า (กรัม)</label>
-                    <input type="number" step="any" id="f_stock" class="form-input" placeholder="เช่น 500.5" style="border-color: #39ff14; font-weight: bold;">
+                    <input type="text" id="f_stock" class="form-input" placeholder="เช่น 1000 หรือ 500.5" style="border-color: #39ff14; font-weight: bold;">
                 </div>
                 <div class="form-group">
                     <label>📸 อัปโหลดรูปภาพ (ถ้ามี)</label>
@@ -214,7 +231,7 @@
             
             <div class="form-group text-left">
                 <label style="color: #39ff14;">น้ำหนักที่รับเข้า (กรัม):</label>
-                <input type="number" step="any" id="add_stock_weight" class="form-input" placeholder="รองรับทศนิยม เช่น 100.5" style="font-size: 20px; text-align: center; border-color: #39ff14; font-weight: bold;">
+                <input type="text" id="add_stock_weight" class="form-input" placeholder="รองรับทศนิยม เช่น 100.5" style="font-size: 20px; text-align: center; border-color: #39ff14; font-weight: bold;">
             </div>
             
             <button class="btn-submit" id="btn-save-stock" onclick="saveAddedStock()" style="background: #006400; border-color: #004400; color: white;">✅ ยืนยันการรับเข้า</button>
@@ -275,7 +292,7 @@
                 gradeSelect.disabled = true;
             } else {
                 gradeSelect.disabled = false;
-                if(gradeSelect.value === '-') gradeSelect.value = 'TOP';
+                if(gradeSelect.value === '-') gradeSelect.value = 'Top';
             }
         }
 
@@ -290,11 +307,9 @@
 
             if (data && data.length > 0) {
                 allProducts = data; 
-                
                 const uniqueFarms = [...new Set(data.map(item => item.farm_name).filter(name => name))];
                 document.getElementById('farm-filter').innerHTML = '<option value="">-- ทุกฟาร์ม --</option>' + uniqueFarms.map(f => `<option value="${f}">${f}</option>`).join('');
                 document.getElementById('farm-suggestions').innerHTML = uniqueFarms.map(f => `<option value="${f}">`).join('');
-
                 filterTable(); 
             } else {
                 list.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 30px; color: #666;">ไม่มีข้อมูลในคลังสินค้า...</td></tr>`;
@@ -302,12 +317,8 @@
         }
 
         function sortTable(col) {
-            if(sortCol === col) {
-                sortAsc = !sortAsc; 
-            } else {
-                sortCol = col;
-                sortAsc = true;
-            }
+            if(sortCol === col) { sortAsc = !sortAsc; } 
+            else { sortCol = col; sortAsc = true; }
 
             allProducts.sort((a, b) => {
                 let valA = a[col] === null || a[col] === undefined ? '' : a[col];
@@ -320,7 +331,6 @@
                 if (valA > valB) return sortAsc ? 1 : -1;
                 return 0;
             });
-            
             filterTable(); 
         }
 
@@ -352,7 +362,6 @@
                         ? `<img src="${item.image_url}" class="thumb-img" title="ดูรูปขนาดใหญ่" onclick="openImageView('${item.sku}', '${item.strain_name}', '${item.image_url}')">` 
                         : `<div class="thumb-placeholder" title="เพิ่มรูปภาพ" onclick="openImageView('${item.sku}', '${item.strain_name}', null)">NO<br>IMG</div>`;
                     
-                    // 🛡️ ป้องกันบั๊ก Null Crash ให้แสดงผล 0 แทน
                     let safeWeight = Number(item.stock_weight || 0);
 
                     return `
@@ -364,7 +373,7 @@
                         <td><span class="badge">${item.grade}</span></td>
                         <td style="color: #888;">${item.farm_name || '-'}</td>
                         <td style="color: #39ff14; font-weight: bold;">${safeWeight.toLocaleString()} g</td>
-                        <td style="text-align:center; min-width: 130px;">
+                        <td style="text-align:center; min-width: 140px;">
                             <button onclick="openAddStockModal('${item.sku}', '${item.strain_name}', ${safeWeight})" class="btn-action" style="background: rgba(57,255,20,0.1); border-color: #39ff14; color: #39ff14; margin-right: 5px;" title="รับของเข้า">➕ สต๊อก</button>
                             <button onclick="openQR('${item.sku}', '${item.strain_name}', '${item.grade}')" class="btn-action" title="QR Code">🔳 QR</button>
                         </td>
@@ -376,11 +385,9 @@
             }
         }
 
-        // 🛡️ เช็กสิทธิ์ตอนกดปุ่ม เพิ่มรายการสินค้าใหม่ (เฉพาะ CEO)
         function checkAdmin(targetPage) {
             let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (กรุณาใส่รหัส PIN):");
             if (!pin) return;
-            
             let user = SYSTEM_PINS[pin];
             if (user && user.role === 'CEO') {
                 if(targetPage === 'manage') openAddModal();
@@ -401,7 +408,6 @@
 
         function closeAddModal() { document.getElementById('addProductModal').style.display = 'none'; }
 
-        // 🛡️ บันทึกสินค้าใหม่ (พร้อมดันข้อมูลขึ้น Log)
         async function saveNewProduct() {
             const sku = document.getElementById('f_sku').value;
             const strain_name = document.getElementById('f_strain').value.trim();
@@ -413,8 +419,10 @@
             const price_base = parseFloat(document.getElementById('f_base').value) || 0;
             const price_tier1 = parseFloat(document.getElementById('f_t1').value) || 0;
             const price_tier2 = parseFloat(document.getElementById('f_t2').value) || 0;
-            // ดึงน้ำหนักมาเป็นตัวเลข ป้องกัน Null
-            const stock_weight = parseFloat(document.getElementById('f_stock').value) || 0;
+            
+            // 🌟 ระบบทำความสะอาดตัวเลข: ลบลูกน้ำ (,) ออกก่อนแปลงเป็นตัวเลข ป้องกันบั๊ก
+            let rawStock = document.getElementById('f_stock').value.replace(/,/g, '');
+            const stock_weight = parseFloat(rawStock) || 0;
             
             const imageFile = document.getElementById('f_image').files[0];
 
@@ -447,7 +455,6 @@
                 }]);
                 if (invErr) throw invErr;
 
-                // 🌟 บันทึกรับเข้า Log ทันทีที่เพิ่มสินค้าเสร็จ
                 if (stock_weight > 0) {
                     await _supabase.from('ztech_logs').insert([{
                         sku: sku, action_type: 'IN', weight_change: stock_weight, performed_by: `SYS: NEW ITEM [CEO Z]`
@@ -471,36 +478,25 @@
             }
         }
 
-        // 🌟 ฟังก์ชันใหม่: เติมสต๊อก (Restock) สำหรับสินค้าที่มีอยู่แล้ว
-        let targetStockSku = '';
-        let targetStockStrain = '';
-        let currentStockWeight = 0;
-        let restockRoleName = '';
-
+        let targetStockSku = ''; let targetStockStrain = ''; let currentStockWeight = 0; let restockRoleName = '';
         function openAddStockModal(sku, strain, currentWeight) {
             let pin = prompt("🔒 ยืนยันสิทธิ์ผู้บริหารหรือผู้จัดการ (PIN):");
             if (!pin) return;
             let user = SYSTEM_PINS[pin];
-            // อนุญาตให้ CEO และ Manager เติมของได้ (พนักงานทั่วไปเติมไม่ได้)
             if (user && (user.role === 'CEO' || user.role === 'Manager')) {
-                restockRoleName = user.name;
-                targetStockSku = sku;
-                targetStockStrain = strain;
-                currentStockWeight = parseFloat(currentWeight) || 0;
-                
+                restockRoleName = user.name; targetStockSku = sku; targetStockStrain = strain; currentStockWeight = parseFloat(currentWeight) || 0;
                 document.getElementById('stockModalStrain').innerText = strain;
                 document.getElementById('stockModalSku').innerText = sku;
                 document.getElementById('add_stock_weight').value = '';
                 document.getElementById('addStockModal').style.display = 'block';
-            } else {
-                alert("❌ ไม่มีสิทธิ์เติมสต๊อก! (เฉพาะ CEO หรือ Manager เท่านั้น)");
-            }
+            } else { alert("❌ ไม่มีสิทธิ์เติมสต๊อก! (เฉพาะ CEO หรือ Manager เท่านั้น)"); }
         }
 
         function closeAddStockModal() { document.getElementById('addStockModal').style.display = 'none'; }
 
         async function saveAddedStock() {
-            let addedWeight = parseFloat(document.getElementById('add_stock_weight').value);
+            let rawAdd = document.getElementById('add_stock_weight').value.replace(/,/g, '');
+            let addedWeight = parseFloat(rawAdd);
             if (!addedWeight || addedWeight <= 0) return alert("⚠️ กรุณาระบุน้ำหนักที่ถูกต้อง (ต้องมากกว่า 0)");
             
             const btn = document.getElementById('btn-save-stock');
@@ -508,116 +504,71 @@
 
             try {
                 let newTotal = currentStockWeight + addedWeight;
-                
-                // 1. อัปเดตในคลังหลัก
                 const { error: invErr } = await _supabase.from('ztech_inventory').update({ stock_weight: newTotal }).eq('sku', targetStockSku);
                 if (invErr) throw invErr;
-
-                // 2. ยิงข้อมูลเข้าหน้า Log ให้เถ้าแก่ตรวจสอบได้
                 const { error: logErr } = await _supabase.from('ztech_logs').insert([{ 
                     sku: targetStockSku, action_type: 'IN', weight_change: addedWeight, performed_by: `SYS: RESTOCK [${restockRoleName}]` 
                 }]);
                 if (logErr) throw logErr;
 
                 alert(`✅ รับเข้า ${addedWeight}g สำเร็จ! สต๊อกล่าสุดอัปเดตเป็น ${newTotal}g`);
-                closeAddStockModal();
-                loadInventory();
-            } catch (err) {
-                alert("❌ เกิดข้อผิดพลาด: " + err.message);
-            } finally {
-                btn.innerHTML = "✅ ยืนยันการรับเข้า"; btn.disabled = false;
-            }
+                closeAddStockModal(); loadInventory();
+            } catch (err) { alert("❌ เกิดข้อผิดพลาด: " + err.message); } finally { btn.innerHTML = "✅ ยืนยันการรับเข้า"; btn.disabled = false; }
         }
 
-        // --- ส่วนของการจัดการรูปภาพ ---
         function openImageView(sku, strain_name, imgUrl) {
-            targetSkuForUpload = sku; 
-            document.getElementById('viewImgTitle').innerText = strain_name;
-            const imgDisplay = document.getElementById('viewImgDisplay');
-            const imgPlaceholder = document.getElementById('viewImgPlaceholder');
-            const btnDelete = document.getElementById('btn-delete-img');
-
-            if (imgUrl && imgUrl !== 'null') {
-                imgDisplay.src = imgUrl; imgDisplay.style.display = 'block'; imgPlaceholder.style.display = 'none'; btnDelete.style.display = 'inline-block';
-            } else {
-                imgDisplay.src = ''; imgDisplay.style.display = 'none'; imgPlaceholder.style.display = 'block'; btnDelete.style.display = 'none'; 
-            }
+            targetSkuForUpload = sku; document.getElementById('viewImgTitle').innerText = strain_name;
+            const imgDisplay = document.getElementById('viewImgDisplay'); const imgPlaceholder = document.getElementById('viewImgPlaceholder'); const btnDelete = document.getElementById('btn-delete-img');
+            if (imgUrl && imgUrl !== 'null') { imgDisplay.src = imgUrl; imgDisplay.style.display = 'block'; imgPlaceholder.style.display = 'none'; btnDelete.style.display = 'inline-block'; } 
+            else { imgDisplay.src = ''; imgDisplay.style.display = 'none'; imgPlaceholder.style.display = 'block'; btnDelete.style.display = 'none'; }
             document.getElementById('imageViewModal').style.display = 'block';
         }
-
         function closeImageView() { document.getElementById('imageViewModal').style.display = 'none'; }
 
         function requestImageUpload() {
-            let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (กรุณาใส่รหัส PIN):");
-            if (!pin) return;
+            let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (กรุณาใส่รหัส PIN):"); if (!pin) return;
             let user = SYSTEM_PINS[pin];
             if (user && user.role === 'CEO') { document.getElementById('quick-upload-input').click(); } 
             else { alert("❌ ไม่มีสิทธิ์เข้าถึง! (จำกัดเฉพาะ CEO เท่านั้น)"); }
         }
 
         async function requestImageDelete() {
-            let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (กรุณาใส่รหัส PIN):");
-            if (!pin) return;
+            let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (กรุณาใส่รหัส PIN):"); if (!pin) return;
             let user = SYSTEM_PINS[pin];
-            if (user && user.role === 'CEO') {
-                if (confirm("⚠️ คุณแน่ใจหรือไม่ที่จะลบรูปภาพนี้ออกจากระบบ?")) await deleteImage();
-            } else { alert("❌ ไม่มีสิทธิ์เข้าถึง! (จำกัดเฉพาะ CEO เท่านั้น)"); }
+            if (user && user.role === 'CEO') { if (confirm("⚠️ คุณแน่ใจหรือไม่ที่จะลบรูปภาพนี้ออกจากระบบ?")) await deleteImage(); } 
+            else { alert("❌ ไม่มีสิทธิ์เข้าถึง! (จำกัดเฉพาะ CEO เท่านั้น)"); }
         }
 
         async function processImageUpload(event) {
-            const file = event.target.files[0];
-            if(!file) return;
-            const loading = document.getElementById('loadingOverlay');
-            loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "📸 กำลังอัปโหลดรูปภาพใหม่...";
+            const file = event.target.files[0]; if(!file) return;
+            const loading = document.getElementById('loadingOverlay'); loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "📸 กำลังอัปโหลดรูปภาพใหม่...";
             try {
-                const fileExt = file.name.split('.').pop();
-                const fileName = `item_${Date.now()}.${fileExt}`;
-                const { error: uploadErr } = await _supabase.storage.from('ztech_images').upload(fileName, file);
-                if (uploadErr) throw uploadErr;
+                const fileExt = file.name.split('.').pop(); const fileName = `item_${Date.now()}.${fileExt}`;
+                const { error: uploadErr } = await _supabase.storage.from('ztech_images').upload(fileName, file); if (uploadErr) throw uploadErr;
                 const { data: publicUrlData } = _supabase.storage.from('ztech_images').getPublicUrl(fileName);
-                const { error: updateErr } = await _supabase.from('ztech_inventory').update({ image_url: publicUrlData.publicUrl }).eq('sku', targetSkuForUpload);
-                if (updateErr) throw updateErr;
+                const { error: updateErr } = await _supabase.from('ztech_inventory').update({ image_url: publicUrlData.publicUrl }).eq('sku', targetSkuForUpload); if (updateErr) throw updateErr;
                 closeImageView(); loadInventory();
-            } catch (err) { alert("❌ อัปโหลดรูปไม่สำเร็จ: " + err.message); } 
-            finally { event.target.value = ''; loading.style.display = 'none'; }
+            } catch (err) { alert("❌ อัปโหลดรูปไม่สำเร็จ: " + err.message); } finally { event.target.value = ''; loading.style.display = 'none'; }
         }
 
         async function deleteImage() {
-            const loading = document.getElementById('loadingOverlay');
-            loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "🗑️ กำลังลบรูปภาพ...";
+            const loading = document.getElementById('loadingOverlay'); loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "🗑️ กำลังลบรูปภาพ...";
             try {
-                const { error: updateErr } = await _supabase.from('ztech_inventory').update({ image_url: null }).eq('sku', targetSkuForUpload);
-                if (updateErr) throw updateErr;
+                const { error: updateErr } = await _supabase.from('ztech_inventory').update({ image_url: null }).eq('sku', targetSkuForUpload); if (updateErr) throw updateErr;
                 closeImageView(); loadInventory();
-            } catch (err) { alert("❌ ลบรูปไม่สำเร็จ: " + err.message); } 
-            finally { loading.style.display = 'none'; }
+            } catch (err) { alert("❌ ลบรูปไม่สำเร็จ: " + err.message); } finally { loading.style.display = 'none'; }
         }
 
         function openQR(sku, strain, grade) {
-            let gradeText = grade === '-' ? '' : ` (${grade})`;
-            document.getElementById('modalStrain').innerText = strain + gradeText;
-            document.getElementById('modalSku').innerText = sku;
-            document.getElementById('modalQrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${sku}`;
+            let gradeText = grade === '-' ? '' : ` (${grade})`; document.getElementById('modalStrain').innerText = strain + gradeText;
+            document.getElementById('modalSku').innerText = sku; document.getElementById('modalQrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${sku}`;
             document.getElementById('qrModal').style.display = 'block';
         }
-
         function closeQR() { document.getElementById('qrModal').style.display = 'none'; }
-
         function printQR() {
-            let imgSrc = document.getElementById('modalQrImg').src;
-            let title = document.getElementById('modalStrain').innerText;
-            let sku = document.getElementById('modalSku').innerText;
+            let imgSrc = document.getElementById('modalQrImg').src; let title = document.getElementById('modalStrain').innerText; let sku = document.getElementById('modalSku').innerText;
             let printWindow = window.open('', '', 'width=600,height=600');
-            printWindow.document.write(`
-                <html>
-                <body style="text-align:center; font-family:sans-serif; margin-top:50px;">
-                    <h2 style="margin-bottom: 5px;">${title}</h2>
-                    <p style="font-family:monospace; font-size:18px; margin-top:0;">${sku}</p>
-                    <img src="${imgSrc}" style="width:200px; height:200px; border:2px solid #000; padding:10px;">
-                    <script>setTimeout(() => { window.print(); window.close(); }, 500);<\/script>
-                </body>
-                </html>
-            `);
+            printWindow.document.write(`<html><body style="text-align:center; font-family:sans-serif; margin-top:50px;"><h2 style="margin-bottom: 5px;">${title}</h2><p style="font-family:monospace; font-size:18px; margin-top:0;">${sku}</p><img src="${imgSrc}" style="width:200px; height:200px; border:2px solid #000; padding:10px;"><script>setTimeout(() => { window.print(); window.close(); }, 500);<\/script></body></html>`);
         }
 
         loadInventory();
