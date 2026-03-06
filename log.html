@@ -270,6 +270,7 @@
 
                     let orderProfit = netPrice - totalOrderCost;
                     let rowClass = "hover:bg-gray-900 border-b border-gray-800 transition-colors";
+                    // 🌟 แก้ไข: ถอดรหัส 0420 ออกจาก prompt ตรงนี้แล้วค่ะ
                     let actionBtn = `<button onclick="voidBill('${order.id}', '${encodeURIComponent(JSON.stringify(order.cart_items))}')" class="text-red-500 hover:text-red-400 font-bold bg-gray-900 px-2 py-1 rounded border border-gray-700 text-xs">❌ Void</button>`;
                     let profitColor = orderProfit >= 0 ? 'text-neonGreen' : 'text-yellow-500';
 
@@ -356,7 +357,8 @@
 
         async function voidBill(orderId, cartItemsEncoded) {
             if(userRole !== 'admin') return alert("ไม่มีสิทธิ์ยกเลิกบิล");
-            let pin = prompt("🔒 ยืนยัน PIN ผู้จัดการ (0420):");
+            // 🌟 แก้ไข: ถอดคำใบ้รหัส 0420 ออกแล้ว
+            let pin = prompt("🔒 ยืนยันสิทธิ์ผู้จัดการ (กรุณาใส่รหัส PIN):");
             if(pin !== '0420') return alert("❌ รหัสผิด");
             if(!confirm("⚠️ แน่ใจหรือไม่ว่าจะยกเลิกบิลนี้? ระบบจะดึงสต๊อกกลับเข้าคลัง")) return;
 
@@ -376,11 +378,10 @@
             } catch (error) { alert("❌ เกิดข้อผิดพลาด: " + error.message); }
         }
 
-        // 🌟 อัปเกรดระบบ Export CSV ให้ใช้ Blob (โหลดได้แม้ข้อมูลเยอะและออฟไลน์)
         function exportToCSV() {
             if(rawOrdersData.length === 0) return alert("ไม่มีข้อมูล");
             
-            let csvContent = "\uFEFF"; // ใส่ BOM เพื่อให้ Excel อ่านภาษาไทยได้สมบูรณ์
+            let csvContent = "\uFEFF"; 
             if(userRole === 'admin') {
                 csvContent += "Date,Customer,Customer ID,Total Weight (g),Discount,Net Price,Profit,Status,Items\n";
             } else {
@@ -407,7 +408,6 @@
                 csvContent += rowArray.join(",") + "\n";
             });
 
-            // สร้าง Blob เพื่อการโหลดที่เสถียร 100%
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
@@ -418,7 +418,6 @@
             document.body.removeChild(link);
         }
 
-        // 🌟 อัปเกรด AI Analysis (ตรวจจับความผิดปกติ + สรุปสายพันธุ์)
         async function generateAIReport() {
             if (userRole !== 'admin') return alert("ฟีเจอร์นี้สงวนไว้สำหรับผู้บริหารเท่านั้นค่ะ");
             
@@ -431,7 +430,6 @@
                 let profStr = document.getElementById('sum-profit').innerText;
                 let orderStr = document.getElementById('sum-orders').innerText;
                 
-                // AI Logic: ตรวจสอบหาความผิดปกติ (Anomaly Detection)
                 let voidCount = rawOrdersData.filter(r => r.status === 'CANCELLED' || r.status === 'VOID').length;
                 let discountGiven = rawOrdersData.reduce((sum, order) => sum + (order.discount_amount || 0), 0);
                 
@@ -444,7 +442,6 @@
 
                 let msgText = `🌑 Z-TECH EXECUTIVE REPORT 🌑\nประจำช่วงเวลา: ${document.getElementById('btn-'+currentFilter).innerText}\n━━━━━━━━━━━━━━\n💰 ยอดขายสุทธิ: ${revStr}\n📈 กำไรขั้นต้น: ${profStr}\n🧾 จำนวนบิลสำเร็จ: ${orderStr}\n━━━━━━━━━━━━━━\n👁️‍🗨️ SYSTEM ANALYSIS:\n${aiAlerts}`;
 
-                // ใช้ Token ที่ถูกต้อง 100%
                 const token = '2mqUKe/Rb3dM/vKhOPvuXB8ag0eCS7t8ITrg5+NRiTWKXhgeA/aypMOZc5aDDvpufwkkeioOULxPu7/57MGs7Y1HGGfMW7xZd9vQD0lyY5DID8X9dfYv6AYHm3q1vqLDHzsrPO51asEQDb7stjyMSgdB04t89/1O/w1cDnyilFU=';
                 const userId = 'Cbf93761b1ac023b9fbe28afa7efbfb16'; 
                 
