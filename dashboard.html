@@ -10,11 +10,12 @@
         .container { max-width: 1050px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 8px; background: #111; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
         h1 { color: #d4af37; text-align: center; font-size: 26px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
         
-        /* 🌟 ระบบเลื่อนตารางบนมือถือ */
+        /* 🌟 ระบบเลื่อนตารางและปุ่มเรียงลำดับ (Sortable) */
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; border-radius: 4px; }
-        table { width: 100%; border-collapse: collapse; min-width: 700px; }
-        th { border-bottom: 2px solid #d4af37; padding: 12px; text-align: left; color: #d4af37; font-size: 16px; white-space: nowrap; }
-        td { padding: 12px; border-bottom: 1px solid #222; font-size: 15px; vertical-align: middle; white-space: nowrap; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { border-bottom: 2px solid #d4af37; padding: 12px; text-align: left; color: #d4af37; font-size: 15px; white-space: nowrap; cursor: pointer; transition: 0.2s; user-select: none; }
+        th:hover { background: rgba(212, 175, 55, 0.1); }
+        td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; vertical-align: middle; white-space: nowrap; }
         
         .badge { background: #333; color: #d4af37; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; border: 1px solid #d4af37; }
         
@@ -24,46 +25,62 @@
         .btn-action:hover { background: #d4af37; color: #000; }
 
         .filter-section { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .filter-input { flex: 1; min-width: 140px; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; font-size: 15px; }
+        .filter-input { flex: 1; min-width: 130px; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; font-size: 14px; }
 
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); overflow-y: auto; }
         .modal-content { background-color: #111; margin: 5% auto; padding: 30px; border: 2px solid #d4af37; width: 90%; max-width: 600px; border-radius: 10px; position: relative; }
         .close { color: #888; position: absolute; right: 20px; top: 15px; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: #ff4444; }
         
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; color: #d4af37; margin-bottom: 5px; font-size: 14px; font-weight: bold; }
         .form-input { width: 100%; padding: 10px; background: #050505; border: 1px solid #444; color: white; border-radius: 4px; box-sizing: border-box; }
+        .form-input:focus { border-color: #39ff14; outline: none; }
+        .form-input:disabled, .form-input[readonly] { opacity: 0.5; cursor: not-allowed; background: #222; }
+        
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
         
-        .btn-submit { width: 100%; padding: 15px; background: #4a0e4e; color: white; font-size: 18px; font-weight: bold; border: 1px solid #8b008b; border-radius: 5px; cursor: pointer; margin-top: 20px; }
-        .thumb-img, .thumb-placeholder { width: 50px; height: 50px; border-radius: 4px; border: 1px solid #d4af37; cursor: pointer; object-fit: cover; }
-        .thumb-placeholder { background: #222; border-style: dashed; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #d4af37; }
+        .btn-submit { width: 100%; padding: 15px; background: #4a0e4e; color: white; font-size: 18px; font-weight: bold; border: 1px solid #8b008b; border-radius: 5px; cursor: pointer; margin-top: 20px; transition: 0.2s; }
+        .btn-submit:hover { background: #6a1b6a; box-shadow: 0 0 15px rgba(139, 0, 139, 0.5); }
         
-        /* 🌟 ปรับแต่งสำหรับมือถือ (Mobile Responsive) */
+        .thumb-img { width: 45px; height: 45px; object-fit: cover; border-radius: 4px; border: 1px solid #d4af37; cursor: pointer; transition: 0.2s; }
+        .thumb-img:hover { filter: brightness(1.2); box-shadow: 0 0 10px #d4af37; }
+        .thumb-placeholder { width: 45px; height: 45px; background: #222; border-radius: 4px; border: 1px dashed #d4af37; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #d4af37; text-align: center; cursor: pointer; }
+        
+        input[type="file"]::file-selector-button { background: #4a0e4e; color: white; border: 1px solid #8b008b; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 15px; transition: 0.2s; }
+        input[type="file"]::file-selector-button:hover { background: #6a1b6a; }
+
+        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; color: #39ff14; font-size: 20px; font-weight: bold; align-items: center; justify-content: center; flex-direction: column; }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); width: 40px; height: 40px; border-radius: 50%; border-left-color: #39ff14; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Mobile Responsive */
         @media (max-width: 768px) {
             body { padding: 10px; }
             .container { padding: 15px; }
-            .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 10px; } /* ให้ฟอร์มเรียงลงมาเป็นแนวตั้งแถวเดียว */
+            .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 10px; }
             .filter-section { flex-direction: column; }
             .filter-input { width: 100%; }
-            .action-buttons-top { flex-direction: column; width: 100%; }
-            .btn-create { width: 100%; text-align: center; }
-            h1 { font-size: 22px; }
         }
     </style>
 </head>
 <body>
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <span id="loadingText">⏳ กำลังประมวลผล กรุณารอสักครู่...</span>
+    </div>
+
     <div class="container">
         <h1>🌑 Z-TECH INVENTORY 🌑</h1>
         
-        <div class="action-buttons-top" style="text-align: center; margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+        <div style="text-align: center; margin-bottom: 25px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
             <button onclick="checkAdmin('manage')" class="btn-create">➕ เพิ่มรายการสินค้าใหม่</button>
-            <a href="log.html" class="btn-create" style="background: #8b0000; border-color: #550000; color: white;">📊 ดูประวัติบิล & กำไร</a>
+            <a href="log.html" class="btn-create" style="background: #8b0000; border-color: #550000; color: white;">📊 ประวัติบิล & บัญชี</a>
         </div>
 
         <div class="filter-section" style="position: sticky; top: 0; z-index: 10; background: #111; padding-bottom: 10px; border-bottom: 1px solid #333;">
-            <input type="text" id="search-input" class="filter-input" placeholder="🔍 ค้นหาสายพันธุ์..." onkeyup="filterTable()">
+            <input type="text" id="search-input" class="filter-input" placeholder="🔍 ค้นหาสายพันธุ์, รหัส..." onkeyup="filterTable()" style="flex: 2;">
             <select id="farm-filter" class="filter-input" onchange="filterTable()">
                 <option value="">-- ทุกฟาร์ม --</option>
             </select>
@@ -73,24 +90,32 @@
                 <option value="ใต้เครื่อง">ใต้เครื่อง</option>
                 <option value="ใบทริม">ใบทริม</option>
             </select>
+            <select id="grade-filter" class="filter-input" onchange="filterTable()">
+                <option value="">-- ทุกเกรด --</option>
+                <option value="TOP">TOP</option>
+                <option value="Mid">Mid</option>
+                <option value="Pop">Pop</option>
+                <option value="Mini-pop">Mini-pop</option>
+                <option value="-">-</option>
+            </select>
         </div>
 
         <div class="table-responsive">
             <table>
                 <thead>
                     <tr>
-                        <th>รูป</th>
-                        <th>รหัส (SKU)</th>
-                        <th>สายพันธุ์</th>
-                        <th>ประเภท</th>
-                        <th>เกรด</th>
-                        <th>ฟาร์ม</th>
-                        <th>สต๊อก (g)</th>
+                        <th>รูปภาพ</th>
+                        <th onclick="sortTable('sku')">รหัส (SKU) ↕</th>
+                        <th onclick="sortTable('strain_name')">สายพันธุ์ (Strain) ↕</th>
+                        <th onclick="sortTable('category')">ประเภท ↕</th>
+                        <th onclick="sortTable('grade')">เกรด ↕</th>
+                        <th onclick="sortTable('farm_name')">รับจากฟาร์ม ↕</th>
+                        <th onclick="sortTable('stock_weight')">สต๊อก (g) ↕</th>
                         <th style="text-align:center;">Action</th>
                     </tr>
                 </thead>
                 <tbody id="product-list">
-                    <tr><td colspan="8" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+                    <tr><td colspan="8" style="text-align:center; padding: 20px;">กำลังโหลดข้อมูลคลังสินค้า...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -101,42 +126,113 @@
     <div id="addProductModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeAddModal()">&times;</span>
-            <h2 style="color:#d4af37; margin-top:0; text-align:center; border-bottom: 1px solid #333; padding-bottom: 10px;">🌑 เพิ่มรายการสินค้าใหม่</h2>
+            <h2 style="color:#d4af37; margin-top:0; text-align:center; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+                🌑 เพิ่มรายการสินค้าใหม่
+            </h2>
             
             <div class="grid-2">
-                <div class="form-group"><label>รหัส SKU</label><input type="text" id="f_sku" class="form-input" readonly style="color: #888; background: #222;"></div>
-                <div class="form-group"><label>ชื่อสายพันธุ์</label><input type="text" id="f_strain" class="form-input"></div>
+                <div class="form-group">
+                    <label>รหัส SKU (อัตโนมัติ)</label>
+                    <input type="text" id="f_sku" class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label>ชื่อสายพันธุ์ / รายการ</label>
+                    <input type="text" id="f_strain" class="form-input" placeholder="เช่น Z-Core">
+                </div>
             </div>
+
             <div class="grid-2">
                 <div class="form-group">
                     <label>ประเภท</label>
-                    <select id="f_category" class="form-input" onchange="toggleGrade()"><option value="ดอก">ดอก</option><option value="ใต้เครื่อง">ใต้เครื่อง</option><option value="ใบทริม">ใบทริม</option></select>
+                    <select id="f_category" class="form-input" onchange="toggleGrade()">
+                        <option value="ดอก">ดอก (Flower)</option>
+                        <option value="ใต้เครื่อง">ใต้เครื่อง (Powder)</option>
+                        <option value="ใบทริม">ใบทริม (Trim)</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label>เกรด</label>
-                    <select id="f_grade" class="form-input"><option value="TOP">TOP</option><option value="Mid">Mid</option><option value="-">-</option></select>
+                    <label>เกรด (เฉพาะดอก)</label>
+                    <select id="f_grade" class="form-input">
+                        <option value="TOP">TOP</option>
+                        <option value="Mid">Mid</option>
+                        <option value="Pop">Pop</option>
+                        <option value="Mini-pop">Mini-pop</option>
+                        <option value="Mixed">Mixed</option>
+                        <option value="Other">Other</option>
+                        <option value="-">-</option>
+                    </select>
                 </div>
             </div>
 
-            <h3 style="color:#888; font-size:14px; border-bottom:1px solid #333; margin-top:15px;">📦 ข้อมูลฟาร์ม & ราคา</h3>
+            <h3 style="color:#888; font-size:14px; border-bottom:1px solid #333; padding-bottom:5px; margin-top:15px;">📦 ข้อมูลฟาร์ม & ราคา</h3>
+            
             <div class="grid-2">
                 <div class="form-group">
-                    <label>ชื่อฟาร์ม (คลิกเพื่อเลือกชื่อเก่า)</label>
-                    <input type="text" id="f_farm" class="form-input" list="farm-suggestions" placeholder="พิมพ์หรือเลือกจากรายการ">
+                    <label>ชื่อฟาร์ม (พิมพ์หรือเลือกจากรายการ)</label>
+                    <input type="text" id="f_farm" class="form-input" list="farm-suggestions" placeholder="เช่น Highbud Farm">
                 </div>
-                <div class="form-group"><label>ต้นทุนรับเข้า</label><input type="number" step="any" id="f_cost" class="form-input" placeholder="0"></div>
-            </div>
-            <div class="grid-3">
-                <div class="form-group"><label>ปลีก (1g)</label><input type="number" step="any" id="f_base" class="form-input"></div>
-                <div class="form-group"><label>ส่ง (1 ขีด)</label><input type="number" step="any" id="f_t1" class="form-input"></div>
-                <div class="form-group"><label>ส่ง (1 กิโล)</label><input type="number" step="any" id="f_t2" class="form-input"></div>
+                <div class="form-group">
+                    <label>ต้นทุนรับเข้า (บาท/กรัม)</label>
+                    <input type="number" step="any" id="f_cost" class="form-input" placeholder="0">
+                </div>
             </div>
 
-            <div class="form-group" style="margin-top: 10px;">
-                <label style="color: #39ff14;">⚖️ สต๊อกแรกเข้า (g)</label>
-                <input type="number" step="any" id="f_stock" class="form-input" style="border-color: #39ff14;">
+            <div class="grid-3">
+                <div class="form-group">
+                    <label>ปลีก (1g)</label>
+                    <input type="number" step="any" id="f_base" class="form-input" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>ส่ง (1 ขีด)</label>
+                    <input type="number" step="any" id="f_t1" class="form-input" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>ส่ง (1 กิโลฯ)</label>
+                    <input type="number" step="any" id="f_t2" class="form-input" placeholder="0">
+                </div>
             </div>
-            <button class="btn-submit" id="save-btn" onclick="saveNewProduct()">💾 บันทึกข้อมูล</button>
+
+            <div class="grid-2" style="margin-top: 10px;">
+                <div class="form-group">
+                    <label style="color: #39ff14;">⚖️ สต๊อกแรกเข้า (กรัม)</label>
+                    <input type="number" step="any" id="f_stock" class="form-input" placeholder="0" style="border-color: #39ff14; font-weight: bold;">
+                </div>
+                <div class="form-group">
+                    <label>📸 อัปโหลดรูปภาพ (ถ้ามี)</label>
+                    <input type="file" id="f_image" class="form-input" accept="image/*" style="padding: 6px;">
+                </div>
+            </div>
+
+            <button class="btn-submit" id="save-btn" onclick="saveNewProduct()">💾 บันทึกข้อมูลลงระบบ</button>
+        </div>
+    </div>
+
+    <div id="imageViewModal" class="modal">
+        <div class="modal-content" style="text-align: center; max-width: 450px;">
+            <span class="close" onclick="closeImageView()">&times;</span>
+            <h2 id="viewImgTitle" style="color:#d4af37; margin-top:0; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px;">ชื่อสายพันธุ์</h2>
+            <div style="background: #000; border: 1px solid #333; border-radius: 8px; padding: 10px; margin-bottom: 20px; min-height: 200px; display: flex; align-items: center; justify-content: center;">
+                <img id="viewImgDisplay" src="" style="max-width: 100%; max-height: 300px; border-radius: 4px; display: none;">
+                <span id="viewImgPlaceholder" style="color: #666; font-size: 14px;">ไม่มีรูปภาพ</span>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 10px;">
+                <button onclick="requestImageUpload()" class="btn-submit" style="margin-top:0; width:auto; padding: 10px 15px; background: #4a0e4e; font-size: 14px;">📸 เปลี่ยนรูป</button>
+                <button onclick="requestImageDelete()" class="btn-submit" id="btn-delete-img" style="margin-top:0; width:auto; padding: 10px 15px; background: #8b0000; border-color: #550000; font-size: 14px; display: none;">🗑️ ลบรูป</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="quick-upload-input" style="display:none;" accept="image/*" onchange="processImageUpload(event)">
+
+    <div id="qrModal" class="modal">
+        <div class="modal-content" style="width: 320px; text-align: center;">
+            <span class="close" onclick="closeQR()">&times;</span>
+            <h2 id="modalStrain" style="color:#d4af37; margin-top:0;"></h2>
+            <p id="modalSku" style="font-family: monospace; color:#aaa; font-size: 18px;"></p>
+            <div style="background: white; padding: 15px; display: inline-block; border-radius: 8px; margin: 15px 0;">
+                <img id="modalQrImg" src="" alt="QR Code" style="display:block;">
+            </div>
+            <button onclick="printQR()" class="btn-submit" style="margin-top:0;">🖨️ พิมพ์ QR Code</button>
         </div>
     </div>
 
@@ -144,94 +240,305 @@
         const supabaseUrl = 'https://zwpagcqoopvinufsgluc.supabase.co';
         const supabaseKey = 'sb_publishable_mirbWPp7tEPi5YiTFPnSSw_BZsKkfLa'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        
         let allProducts = [];
+        let targetSkuForUpload = ''; 
+        let sortCol = 'last_updated';
+        let sortAsc = false;
 
         function toggleGrade() {
             const cat = document.getElementById('f_category').value;
-            const grade = document.getElementById('f_grade');
-            grade.disabled = cat !== 'ดอก';
-            if (cat !== 'ดอก') grade.value = '-';
+            const gradeSelect = document.getElementById('f_grade');
+            if (cat !== 'ดอก') {
+                gradeSelect.value = '-';
+                gradeSelect.disabled = true;
+            } else {
+                gradeSelect.disabled = false;
+                if(gradeSelect.value === '-') gradeSelect.value = 'TOP';
+            }
         }
 
         async function loadInventory() {
             const { data, error } = await _supabase.from('ztech_inventory').select('*').order('last_updated', { ascending: false });
-            if (error) return;
+            const list = document.getElementById('product-list');
+            
+            if (error) {
+                list.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#ff4444;">❌ ระบบขัดข้อง: ${error.message}</td></tr>`;
+                return;
+            }
 
             if (data && data.length > 0) {
                 allProducts = data; 
                 
-                // 🌟 ดึงชื่อฟาร์มที่ไม่ซ้ำกัน
+                // 🌟 ดึงชื่อฟาร์มมาทำ Auto-suggest
                 const uniqueFarms = [...new Set(data.map(item => item.farm_name).filter(name => name))];
-                
-                // 1. ใส่ในช่องค้นหา (Filter)
                 document.getElementById('farm-filter').innerHTML = '<option value="">-- ทุกฟาร์ม --</option>' + uniqueFarms.map(f => `<option value="${f}">${f}</option>`).join('');
-                
-                // 2. ใส่ใน Datalist เพื่อทำ Auto-suggest ตอนเพิ่มสินค้า
                 document.getElementById('farm-suggestions').innerHTML = uniqueFarms.map(f => `<option value="${f}">`).join('');
 
-                renderTable(allProducts); 
+                filterTable(); // เรียก filter เพื่อจัดเรียงและเรนเดอร์
+            } else {
+                list.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 30px; color: #666;">ไม่มีข้อมูลในคลังสินค้า...</td></tr>`;
             }
+        }
+
+        // 🌟 ฟังก์ชันเรียงลำดับตาราง (Sortable Table)
+        function sortTable(col) {
+            if(sortCol === col) {
+                sortAsc = !sortAsc; // สลับมากไปน้อย น้อยไปมาก
+            } else {
+                sortCol = col;
+                sortAsc = true;
+            }
+
+            allProducts.sort((a, b) => {
+                let valA = a[col] === null || a[col] === undefined ? '' : a[col];
+                let valB = b[col] === null || b[col] === undefined ? '' : b[col];
+                
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+
+                if (valA < valB) return sortAsc ? -1 : 1;
+                if (valA > valB) return sortAsc ? 1 : -1;
+                return 0;
+            });
+            
+            filterTable(); // เรนเดอร์ใหม่หลังเรียงเสร็จ
+        }
+
+        function filterTable() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const farmTerm = document.getElementById('farm-filter').value;
+            const categoryTerm = document.getElementById('category-filter').value;
+            const gradeTerm = document.getElementById('grade-filter').value;
+
+            const filteredData = allProducts.filter(item => {
+                const farmNameStr = item.farm_name ? item.farm_name.toLowerCase() : "";
+                const matchSearch = item.strain_name.toLowerCase().includes(searchTerm) || 
+                                    item.sku.toLowerCase().includes(searchTerm) ||
+                                    farmNameStr.includes(searchTerm);
+                const matchFarm = farmTerm === "" || item.farm_name === farmTerm;
+                const matchCategory = categoryTerm === "" || item.category === categoryTerm;
+                const matchGrade = gradeTerm === "" || item.grade === gradeTerm;
+                
+                return matchSearch && matchFarm && matchCategory && matchGrade;
+            });
+            renderTable(filteredData);
         }
 
         function renderTable(dataToRender) {
             const list = document.getElementById('product-list');
-            list.innerHTML = dataToRender.map(item => {
-                let imgThumb = item.image_url ? `<img src="${item.image_url}" class="thumb-img">` : `<div class="thumb-placeholder">NO IMG</div>`;
-                return `<tr>
-                    <td>${imgThumb}</td>
-                    <td style="font-family: monospace;">${item.sku}</td>
-                    <td style="font-weight: bold;">${item.strain_name}</td>
-                    <td>${item.category}</td>
-                    <td><span class="badge">${item.grade}</span></td>
-                    <td style="color:#888;">${item.farm_name || '-'}</td>
-                    <td style="color:#39ff14; font-weight:bold;">${item.stock_weight.toLocaleString()} g</td>
-                    <td style="text-align:center;"><button class="btn-action">🔳 QR</button></td>
-                </tr>`;
-            }).join('');
+            if (dataToRender.length > 0) {
+                list.innerHTML = dataToRender.map(item => {
+                    let imgThumb = item.image_url 
+                        ? `<img src="${item.image_url}" class="thumb-img" title="ดูรูปขนาดใหญ่" onclick="openImageView('${item.sku}', '${item.strain_name}', '${item.image_url}')">` 
+                        : `<div class="thumb-placeholder" title="เพิ่มรูปภาพ" onclick="openImageView('${item.sku}', '${item.strain_name}', null)">NO<br>IMG</div>`;
+                        
+                    return `
+                    <tr class="hover:bg-[#1a1a1a]">
+                        <td>${imgThumb}</td>
+                        <td style="color: #fff; font-family: monospace;">${item.sku}</td>
+                        <td style="font-weight: bold;">${item.strain_name}</td>
+                        <td>${item.category}</td>
+                        <td><span class="badge">${item.grade}</span></td>
+                        <td style="color: #888;">${item.farm_name || '-'}</td>
+                        <td style="color: #39ff14; font-weight: bold;">${item.stock_weight.toLocaleString()} g</td>
+                        <td style="text-align:center;">
+                            <button onclick="openQR('${item.sku}', '${item.strain_name}', '${item.grade}')" class="btn-action">🔳 QR</button>
+                        </td>
+                    </tr>
+                    `;
+                }).join('');
+            } else {
+                list.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px; color: #666;">-- ไม่พบรายการที่ค้นหา --</td></tr>`;
+            }
         }
 
-        function filterTable() {
-            const search = document.getElementById('search-input').value.toLowerCase();
-            const farm = document.getElementById('farm-filter').value;
-            const cat = document.getElementById('category-filter').value;
-            const filtered = allProducts.filter(i => 
-                (i.strain_name.toLowerCase().includes(search) || i.sku.toLowerCase().includes(search)) &&
-                (farm === "" || i.farm_name === farm) &&
-                (cat === "" || i.category === cat)
-            );
-            renderTable(filtered);
+        function checkAdmin(targetPage) {
+            let pass = prompt("🔒 ยืนยันสิทธิ์ผู้จัดการ (กรุณาใส่รหัส PIN):");
+            if (pass === "0420") {
+                if(targetPage === 'manage') openAddModal();
+            } else if (pass !== null && pass !== "") {
+                alert("❌ รหัสผ่านไม่ถูกต้อง!");
+            }
         }
 
-        function checkAdmin(page) {
-            let pass = prompt("🔒 ระบบผู้จัดการ: ใส่รหัสผ่าน 0420");
-            if(pass === "0420") {
-                if(page === 'manage') {
-                    document.getElementById('f_sku').value = `ZT-${Math.random().toString(36).substr(2,6).toUpperCase()}`;
-                    document.getElementById('addProductModal').style.display = 'block';
-                }
-            } else if(pass) alert("❌ รหัสผิด!");
+        function generateSKU() {
+            return `ZT-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
         }
 
-        function closeAddModal() { document.getElementById('addProductModal').style.display = 'none'; }
+        function openAddModal() {
+            document.getElementById('f_sku').value = generateSKU();
+            document.getElementById('f_category').value = 'ดอก';
+            document.getElementById('f_image').value = ''; // เคลียร์ไฟล์เก่า
+            toggleGrade(); 
+            document.getElementById('addProductModal').style.display = 'block';
+        }
 
+        function closeAddModal() {
+            document.getElementById('addProductModal').style.display = 'none';
+        }
+
+        // 🌟 อัปเกรดฟังก์ชัน Save ให้รองรับการอัปโหลดรูปภาพพร้อมกัน
         async function saveNewProduct() {
-            const btn = document.getElementById('save-btn'); btn.innerHTML = "⏳ บันทึก..."; btn.disabled = true;
+            const sku = document.getElementById('f_sku').value;
+            const strain_name = document.getElementById('f_strain').value.trim();
+            const category = document.getElementById('f_category').value;
+            const grade = document.getElementById('f_grade').value;
+            const farm_name = document.getElementById('f_farm').value.trim();
+            
+            const cost_price = parseFloat(document.getElementById('f_cost').value) || 0;
+            const price_base = parseFloat(document.getElementById('f_base').value) || 0;
+            const price_tier1 = parseFloat(document.getElementById('f_t1').value) || 0;
+            const price_tier2 = parseFloat(document.getElementById('f_t2').value) || 0;
+            const stock_weight = parseFloat(document.getElementById('f_stock').value) || 0;
+            
+            const imageFile = document.getElementById('f_image').files[0];
+
+            if(!strain_name) return alert("⚠️ กรุณาระบุชื่อสายพันธุ์");
+
+            const btn = document.getElementById('save-btn');
+            const loading = document.getElementById('loadingOverlay');
+            
+            btn.innerHTML = "⏳ กำลังบันทึก..."; btn.disabled = true;
+            loading.style.display = 'flex';
+            document.getElementById('loadingText').innerText = "⏳ กำลังบันทึกข้อมูลสินค้า...";
+
             try {
-                const payload = {
-                    sku: document.getElementById('f_sku').value,
-                    strain_name: document.getElementById('f_strain').value.trim(),
-                    category: document.getElementById('f_category').value,
-                    grade: document.getElementById('f_grade').value,
-                    farm_name: document.getElementById('f_farm').value.trim(),
-                    cost_price: parseFloat(document.getElementById('f_cost').value) || 0,
-                    price_base: parseFloat(document.getElementById('f_base').value) || 0,
-                    price_tier1: parseFloat(document.getElementById('f_t1').value) || 0,
-                    price_tier2: parseFloat(document.getElementById('f_t2').value) || 0,
-                    stock_weight: parseFloat(document.getElementById('f_stock').value) || 0
-                };
-                await _supabase.from('ztech_inventory').insert([payload]);
-                closeAddModal(); loadInventory(); alert("✅ สำเร็จ");
-            } catch(e) { alert("❌ " + e.message); } finally { btn.innerHTML = "💾 บันทึกข้อมูล"; btn.disabled = false; }
+                let finalImageUrl = null;
+
+                // 1. ถ้ามีการแนบรูปภาพ ให้อัปโหลดขึ้น Cloud ก่อน
+                if (imageFile) {
+                    document.getElementById('loadingText').innerText = "📸 กำลังอัปโหลดรูปภาพ...";
+                    const fileExt = imageFile.name.split('.').pop();
+                    const fileName = `item_${Date.now()}.${fileExt}`;
+                    
+                    const { error: uploadErr } = await _supabase.storage.from('ztech_images').upload(fileName, imageFile);
+                    if (uploadErr) throw uploadErr;
+
+                    const { data: publicUrlData } = _supabase.storage.from('ztech_images').getPublicUrl(fileName);
+                    finalImageUrl = publicUrlData.publicUrl;
+                }
+
+                // 2. บันทึกข้อมูลลงฐานข้อมูล (พร้อม URL รูปถ้ามี)
+                document.getElementById('loadingText').innerText = "💾 กำลังอัปเดตคลังสินค้า...";
+                const { error } = await _supabase.from('ztech_inventory').insert([{
+                    sku, strain_name, category, grade, image_url: finalImageUrl, farm_name,
+                    cost_price, price_base, price_tier1, price_tier2, stock_weight
+                }]);
+
+                if (error) throw error;
+
+                closeAddModal();
+                
+                // เคลียร์ฟอร์ม
+                document.querySelectorAll('.form-input').forEach(input => {
+                    if(input.id !== 'f_category' && input.id !== 'f_grade' && input.id !== 'f_sku') input.value = '';
+                });
+
+                alert("✅ เพิ่มสินค้าเข้าคลังสำเร็จ!");
+                loadInventory(); 
+
+            } catch (error) {
+                console.error(error);
+                alert("❌ เกิดข้อผิดพลาด: " + error.message);
+            } finally {
+                btn.innerHTML = "💾 บันทึกข้อมูลลงระบบ"; btn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        // --- ดูและแก้ไขรูปภาพหลังร้าน ---
+        function openImageView(sku, strain_name, imgUrl) {
+            targetSkuForUpload = sku; 
+            document.getElementById('viewImgTitle').innerText = strain_name;
+            
+            const imgDisplay = document.getElementById('viewImgDisplay');
+            const imgPlaceholder = document.getElementById('viewImgPlaceholder');
+            const btnDelete = document.getElementById('btn-delete-img');
+
+            if (imgUrl && imgUrl !== 'null') {
+                imgDisplay.src = imgUrl; imgDisplay.style.display = 'block'; imgPlaceholder.style.display = 'none'; btnDelete.style.display = 'inline-block';
+            } else {
+                imgDisplay.src = ''; imgDisplay.style.display = 'none'; imgPlaceholder.style.display = 'block'; btnDelete.style.display = 'none'; 
+            }
+            document.getElementById('imageViewModal').style.display = 'block';
+        }
+
+        function closeImageView() { document.getElementById('imageViewModal').style.display = 'none'; }
+
+        function requestImageUpload() {
+            let pass = prompt("🔒 ยืนยันสิทธิ์ผู้จัดการ (กรุณาใส่รหัส PIN):");
+            if (pass === "0420") document.getElementById('quick-upload-input').click(); 
+            else if (pass) alert("❌ รหัสผ่านไม่ถูกต้อง!");
+        }
+
+        async function requestImageDelete() {
+            let pass = prompt("🔒 ยืนยันสิทธิ์ผู้จัดการ (กรุณาใส่รหัส PIN):");
+            if (pass === "0420") {
+                if (confirm("⚠️ คุณแน่ใจหรือไม่ที่จะลบรูปภาพนี้ออกจากระบบ?")) await deleteImage();
+            } else if (pass) alert("❌ รหัสผ่านไม่ถูกต้อง!");
+        }
+
+        async function processImageUpload(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            const loading = document.getElementById('loadingOverlay');
+            loading.style.display = 'flex'; 
+            document.getElementById('loadingText').innerText = "📸 กำลังอัปโหลดรูปภาพใหม่...";
+
+            try {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `item_${Date.now()}.${fileExt}`;
+                const { error: uploadErr } = await _supabase.storage.from('ztech_images').upload(fileName, file);
+                if (uploadErr) throw uploadErr;
+
+                const { data: publicUrlData } = _supabase.storage.from('ztech_images').getPublicUrl(fileName);
+                const { error: updateErr } = await _supabase.from('ztech_inventory').update({ image_url: publicUrlData.publicUrl }).eq('sku', targetSkuForUpload);
+                if (updateErr) throw updateErr;
+
+                closeImageView(); loadInventory();
+            } catch (err) { alert("❌ อัปโหลดรูปไม่สำเร็จ: " + err.message); } 
+            finally { event.target.value = ''; loading.style.display = 'none'; }
+        }
+
+        async function deleteImage() {
+            const loading = document.getElementById('loadingOverlay');
+            loading.style.display = 'flex';
+            document.getElementById('loadingText').innerText = "🗑️ กำลังลบรูปภาพ...";
+            try {
+                const { error: updateErr } = await _supabase.from('ztech_inventory').update({ image_url: null }).eq('sku', targetSkuForUpload);
+                if (updateErr) throw updateErr;
+                closeImageView(); loadInventory();
+            } catch (err) { alert("❌ ลบรูปไม่สำเร็จ: " + err.message); } 
+            finally { loading.style.display = 'none'; }
+        }
+
+        function openQR(sku, strain, grade) {
+            let gradeText = grade === '-' ? '' : ` (${grade})`;
+            document.getElementById('modalStrain').innerText = strain + gradeText;
+            document.getElementById('modalSku').innerText = sku;
+            document.getElementById('modalQrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${sku}`;
+            document.getElementById('qrModal').style.display = 'block';
+        }
+
+        function closeQR() { document.getElementById('qrModal').style.display = 'none'; }
+
+        function printQR() {
+            let imgSrc = document.getElementById('modalQrImg').src;
+            let title = document.getElementById('modalStrain').innerText;
+            let sku = document.getElementById('modalSku').innerText;
+            let printWindow = window.open('', '', 'width=600,height=600');
+            printWindow.document.write(`
+                <html>
+                <body style="text-align:center; font-family:sans-serif; margin-top:50px;">
+                    <h2 style="margin-bottom: 5px;">${title}</h2>
+                    <p style="font-family:monospace; font-size:18px; margin-top:0;">${sku}</p>
+                    <img src="${imgSrc}" style="width:200px; height:200px; border:2px solid #000; padding:10px;">
+                    <script>setTimeout(() => { window.print(); window.close(); }, 500);<\/script>
+                </body>
+                </html>
+            `);
         }
 
         loadInventory();
