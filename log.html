@@ -20,106 +20,124 @@
     </script>
     <style>
         body { background-color: #050505; color: #e0e0e0; }
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: #4a0e4e; border-radius: 10px; }
         .tab-btn { transition: all 0.3s ease; border-bottom: 2px solid transparent; }
         .tab-btn.active { border-color: #d4af37; color: #d4af37; background: rgba(212, 175, 55, 0.1); }
         .profit-glow { text-shadow: 0 0 10px rgba(57, 255, 20, 0.5); }
         .glass-panel { background: rgba(15, 15, 15, 0.9); border: 1px solid #333; }
+        
+        /* Overlay Login */
+        #login-overlay { backdrop-filter: blur(10px); }
     </style>
 </head>
-<body class="h-screen flex flex-col p-4 md:p-6 overflow-hidden">
+<body class="flex flex-col p-3 md:p-6 min-h-screen md:h-screen md:overflow-hidden relative">
 
-    <div class="flex flex-col md:flex-row justify-between items-center mb-4 border-b border-gray-800 pb-4 shrink-0 gap-4">
-        <div>
-            <h1 class="text-2xl md:text-3xl font-bold text-goldDark tracking-widest uppercase">
-                🌑 Z-Tech Command Center
-            </h1>
-            <p class="text-gray-500 mt-1 text-sm">Enterprise Financial Analysis & Logs</p>
+    <div id="login-overlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
+        <h1 class="text-3xl font-bold text-goldDark tracking-widest uppercase mb-2">🌑 Z-Tech Logs</h1>
+        <p class="text-gray-400 mb-6 text-sm">กรุณายืนยันตัวตนเพื่อเข้าสู่ระบบ</p>
+        
+        <input type="password" id="pin-input" placeholder="ใส่รหัส PIN" class="bg-gray-900 border border-gothicPurple text-white text-center text-2xl p-3 rounded w-64 mb-4 focus:outline-none focus:border-neonGreen tracking-widest" inputmode="numeric">
+        
+        <button onclick="login()" class="bg-gothicPurple text-white font-bold py-3 px-8 rounded border border-purple-500 hover:bg-purple-900 transition-colors shadow-[0_0_15px_rgba(74,14,78,0.5)]">
+            🔓 LOGIN
+        </button>
+        
+        <p id="login-error" class="text-red-500 mt-4 hidden font-bold">❌ รหัส PIN ไม่ถูกต้อง</p>
+        <div class="mt-8 text-xs text-gray-600 border border-gray-800 p-2 rounded text-center">
+            ผู้บริหาร (CEO): 0420 <br> พนักงานหน้าร้าน: 1111
         </div>
-        <div class="flex gap-2">
-            <button onclick="exportToCSV()" class="px-4 py-2 bg-gray-800 text-white border border-gray-600 rounded hover:bg-gray-700 transition-colors text-sm font-bold flex items-center gap-1">
-                📥 โหลดรายงาน (CSV)
+    </div>
+
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b border-gray-800 pb-4 shrink-0 gap-4">
+        <div>
+            <h1 class="text-xl md:text-3xl font-bold text-goldDark tracking-widest uppercase">
+                🌑 Command Center
+            </h1>
+            <p id="role-display" class="text-gray-500 mt-1 text-xs md:text-sm">Enterprise Financial Analysis</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <button onclick="exportToCSV()" class="px-3 md:px-4 py-2 bg-gray-800 text-white border border-gray-600 rounded hover:bg-gray-700 transition-colors text-xs md:text-sm font-bold flex items-center gap-1">
+                📥 โหลดรายงาน
             </button>
-            <button id="ai-btn" onclick="generateAIReport()" class="px-4 py-2 bg-gothicPurple text-white border border-purple-500 rounded hover:bg-purple-900 transition-colors text-sm font-bold shadow-[0_0_10px_rgba(74,14,78,0.5)]">
+            <button id="ai-btn" onclick="generateAIReport()" class="px-3 md:px-4 py-2 bg-gothicPurple text-white border border-purple-500 rounded hover:bg-purple-900 transition-colors text-xs md:text-sm font-bold shadow-[0_0_10px_rgba(74,14,78,0.5)]">
                 🤖 ส่ง AI เข้า LINE
             </button>
-            <a href="dashboard.html" class="px-4 py-2 bg-black text-goldDark border border-goldDark rounded hover:bg-goldDark hover:text-black transition-colors text-sm font-bold">
-                ⬅ กลับคลัง
+            <a href="dashboard.html" class="px-3 md:px-4 py-2 bg-black text-goldDark border border-goldDark rounded hover:bg-goldDark hover:text-black transition-colors text-xs md:text-sm font-bold flex items-center">
+                ⬅ กลับ
             </a>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 shrink-0">
-        <div class="bg-gray-900 border-t-2 border-t-white p-4 rounded-lg shadow-lg">
-            <h3 class="text-gray-400 text-xs font-bold tracking-wider mb-1">ยอดขายสุทธิ (NET REVENUE)</h3>
-            <p id="sum-revenue" class="text-2xl font-bold text-white">฿0.00</p>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 shrink-0">
+        <div class="bg-gray-900 border-t-2 border-t-white p-3 md:p-4 rounded-lg shadow-lg">
+            <h3 class="text-gray-400 text-[10px] md:text-xs font-bold tracking-wider mb-1">ยอดขายสุทธิ</h3>
+            <p id="sum-revenue" class="text-lg md:text-2xl font-bold text-white">฿0</p>
         </div>
-        <div class="bg-gray-900 border-t-2 border-t-neonGreen p-4 rounded-lg shadow-[0_0_15px_rgba(57,255,20,0.1)]">
-            <h3 class="text-gray-400 text-xs font-bold tracking-wider mb-1">กำไรขั้นต้น (GROSS PROFIT)</h3>
-            <p id="sum-profit" class="text-2xl font-bold text-neonGreen profit-glow">฿0.00</p>
+        <div id="profit-card" class="bg-gray-900 border-t-2 border-t-neonGreen p-3 md:p-4 rounded-lg shadow-[0_0_15px_rgba(57,255,20,0.1)]">
+            <h3 class="text-gray-400 text-[10px] md:text-xs font-bold tracking-wider mb-1">กำไรขั้นต้น</h3>
+            <p id="sum-profit" class="text-lg md:text-2xl font-bold text-neonGreen profit-glow">฿0</p>
         </div>
-        <div class="bg-gray-900 border-t-2 border-t-goldDark p-4 rounded-lg shadow-lg">
-            <h3 class="text-gray-400 text-xs font-bold tracking-wider mb-1">บิลสำเร็จ (SUCCESS BILLS)</h3>
-            <p id="sum-orders" class="text-2xl font-bold text-goldDark">0 บิล</p>
+        <div class="bg-gray-900 border-t-2 border-t-goldDark p-3 md:p-4 rounded-lg shadow-lg">
+            <h3 class="text-gray-400 text-[10px] md:text-xs font-bold tracking-wider mb-1">บิลสำเร็จ</h3>
+            <p id="sum-orders" class="text-lg md:text-2xl font-bold text-goldDark">0</p>
         </div>
-        <div class="bg-gray-900 border-t-2 border-t-gothicPurple p-4 rounded-lg shadow-lg flex flex-col justify-center">
-            <h3 class="text-gray-400 text-xs font-bold tracking-wider mb-2">🏆 สินค้าขายดี (TOP SELLERS)</h3>
-            <div id="top-sellers-list" class="text-sm text-white flex flex-col gap-1">
-                <span class="text-gray-600">กำลังคำนวณ...</span>
+        <div class="bg-gray-900 border-t-2 border-t-gothicPurple p-3 md:p-4 rounded-lg shadow-lg flex flex-col justify-center overflow-hidden">
+            <h3 class="text-gray-400 text-[10px] md:text-xs font-bold tracking-wider mb-2">🏆 สินค้าขายดี</h3>
+            <div id="top-sellers-list" class="text-xs text-white flex flex-col gap-1 overflow-y-auto">
+                <span class="text-gray-600">รอคำนวณ...</span>
             </div>
         </div>
     </div>
 
-    <div class="flex flex-col md:flex-row justify-between items-center gap-2 mb-4 border-b border-gray-800 shrink-0">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-4 border-b border-gray-800 shrink-0 pb-2">
         <div class="flex gap-2">
-            <button onclick="switchTab('finance')" id="tab-finance" class="tab-btn active px-4 py-2 font-bold text-gray-400 hover:text-white text-sm">💰 บัญชีและการเงิน (Orders)</button>
-            <button onclick="switchTab('security')" id="tab-security" class="tab-btn px-4 py-2 font-bold text-gray-400 hover:text-white text-sm">🛡️ บันทึกคลังสินค้า (Logs)</button>
+            <button onclick="switchTab('finance')" id="tab-finance" class="tab-btn active px-3 py-1 md:py-2 font-bold text-gray-400 hover:text-white text-xs md:text-sm">💰 บัญชี (Orders)</button>
+            <button onclick="switchTab('security')" id="tab-security" class="tab-btn px-3 py-1 md:py-2 font-bold text-gray-400 hover:text-white text-xs md:text-sm">🛡️ คลัง (Logs)</button>
         </div>
         
-        <div class="flex gap-2 mb-2 md:mb-0" id="time-filters">
-            <button onclick="setDateFilter('today')" id="btn-today" class="px-3 py-1 bg-gothicPurple text-white rounded text-xs border border-purple-500">วันนี้</button>
-            <button onclick="setDateFilter('7days')" id="btn-7days" class="px-3 py-1 bg-black text-gray-400 rounded text-xs border border-gray-700 hover:text-white">7 วัน</button>
-            <button onclick="setDateFilter('30days')" id="btn-30days" class="px-3 py-1 bg-black text-gray-400 rounded text-xs border border-gray-700 hover:text-white">30 วัน</button>
-            <button onclick="setDateFilter('all')" id="btn-all" class="px-3 py-1 bg-black text-gray-400 rounded text-xs border border-gray-700 hover:text-white">ทั้งหมด</button>
+        <div class="flex gap-1 md:gap-2 overflow-x-auto w-full md:w-auto pb-1" id="time-filters">
+            <button onclick="setDateFilter('today')" id="btn-today" class="px-3 py-1 bg-gothicPurple text-white rounded text-xs border border-purple-500 whitespace-nowrap">วันนี้</button>
+            <button onclick="setDateFilter('7days')" id="btn-7days" class="px-3 py-1 bg-black text-gray-400 rounded text-xs border border-gray-700 hover:text-white whitespace-nowrap">7 วัน</button>
+            <button onclick="setDateFilter('30days')" id="btn-30days" class="px-3 py-1 bg-black text-gray-400 rounded text-xs border border-gray-700 hover:text-white whitespace-nowrap">30 วัน</button>
+            <button onclick="setDateFilter('all')" id="btn-all" class="px-3 py-1 bg-black text-gray-400 rounded text-xs border border-gray-700 hover:text-white whitespace-nowrap">ทั้งหมด</button>
         </div>
     </div>
 
     <div id="view-finance" class="glass-panel flex-grow overflow-hidden flex flex-col rounded-lg">
-        <div class="overflow-y-auto flex-grow">
-            <table class="w-full text-left border-collapse text-sm">
+        <div class="overflow-auto flex-grow w-full">
+            <table class="w-full text-left border-collapse text-xs md:text-sm min-w-[800px]">
                 <thead class="sticky top-0 bg-black z-10 shadow-md">
                     <tr>
-                        <th class="p-3 border-b border-gothicPurple text-goldDark whitespace-nowrap">เวลา (Time)</th>
-                        <th class="p-3 border-b border-gothicPurple text-goldDark">ลูกค้า (Customer)</th>
-                        <th class="p-3 border-b border-gothicPurple text-goldDark">รายการ (Items)</th>
-                        <th class="p-3 border-b border-gothicPurple text-goldDark">ช่องทาง</th>
-                        <th class="p-3 border-b border-gothicPurple text-goldDark text-right">ยอดรับเงิน</th>
-                        <th class="p-3 border-b border-neonGreen text-neonGreen text-right">กำไร</th>
-                        <th class="p-3 border-b border-bloodRed text-bloodRed text-center">จัดการ</th>
+                        <th class="p-3 border-b border-gothicPurple text-goldDark whitespace-nowrap">เวลา</th>
+                        <th class="p-3 border-b border-gothicPurple text-goldDark whitespace-nowrap">ลูกค้า</th>
+                        <th class="p-3 border-b border-gothicPurple text-goldDark">รายการ</th>
+                        <th class="p-3 border-b border-gothicPurple text-goldDark text-right">ยอดรับ</th>
+                        <th id="col-profit" class="p-3 border-b border-neonGreen text-neonGreen text-right">กำไร</th>
+                        <th id="col-action" class="p-3 border-b border-bloodRed text-bloodRed text-center">จัดการ</th>
                     </tr>
                 </thead>
                 <tbody id="orders-list">
-                    <tr><td colspan="7" class="text-center p-10 text-gray-600 animate-pulse">กำลังโหลดข้อมูลระบบ...</td></tr>
+                    <tr><td colspan="6" class="text-center p-10 text-gray-600 animate-pulse">กำลังโหลดข้อมูลระบบ...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <div id="view-security" class="glass-panel hidden flex-grow overflow-hidden flex flex-col rounded-lg">
-        <div class="overflow-y-auto flex-grow">
-            <table class="w-full text-left border-collapse text-sm">
+        <div class="overflow-auto flex-grow w-full">
+            <table class="w-full text-left border-collapse text-xs md:text-sm min-w-[600px]">
                 <thead class="sticky top-0 bg-black z-10 shadow-md">
                     <tr>
-                        <th class="p-3 border-b border-bloodRed text-bloodRed">วัน-เวลา (Date)</th>
+                        <th class="p-3 border-b border-bloodRed text-bloodRed whitespace-nowrap">เวลา</th>
                         <th class="p-3 border-b border-bloodRed text-bloodRed">รหัส (SKU)</th>
                         <th class="p-3 border-b border-bloodRed text-bloodRed">แอคชัน</th>
-                        <th class="p-3 border-b border-bloodRed text-bloodRed text-right">จำนวน (g)</th>
+                        <th class="p-3 border-b border-bloodRed text-bloodRed text-right whitespace-nowrap">จำนวน (g)</th>
                         <th class="p-3 border-b border-bloodRed text-bloodRed text-right">ผู้ทำรายการ</th>
                     </tr>
                 </thead>
                 <tbody id="log-list">
-                    <tr><td colspan="5" class="text-center p-10 text-gray-600 animate-pulse">กำลังโหลดข้อมูลระบบ...</td></tr>
+                    <tr><td colspan="5" class="text-center p-10 text-gray-600 animate-pulse">รอโหลดข้อมูล...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -132,7 +150,39 @@
 
         let costMap = {}; 
         let currentFilter = 'today';
-        let rawOrdersData = []; // เก็บไว้สำหรับทำ Export CSV
+        let rawOrdersData = []; 
+        let userRole = ''; // 'admin' หรือ 'staff'
+
+        // รับกด Enter ในช่องรหัส
+        document.getElementById('pin-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') login();
+        });
+
+        function login() {
+            const pin = document.getElementById('pin-input').value;
+            const errorText = document.getElementById('login-error');
+            
+            if (pin === '0420') {
+                userRole = 'admin';
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('role-display').innerText = "Logged in as: CEO (Admin)";
+                document.getElementById('role-display').className = "text-goldDark mt-1 text-xs md:text-sm font-bold";
+                initDashboard();
+            } else if (pin === '1111') {
+                userRole = 'staff';
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('role-display').innerText = "Logged in as: STAFF (View Only)";
+                
+                // 🌟 ซ่อนกำไรและปุ่มจัดการ ถ้าเป็นพนักงาน
+                document.getElementById('profit-card').classList.add('hidden');
+                document.getElementById('col-profit').classList.add('hidden');
+                document.getElementById('col-action').classList.add('hidden');
+                
+                initDashboard();
+            } else {
+                errorText.style.display = 'block';
+            }
+        }
 
         function switchTab(tabName) {
             document.getElementById('view-finance').classList.add('hidden');
@@ -148,17 +198,14 @@
 
         function setDateFilter(filterType) {
             currentFilter = filterType;
-            
-            // อัปเดตสีปุ่ม
             ['today', '7days', '30days', 'all'].forEach(id => {
                 let btn = document.getElementById(`btn-${id}`);
                 if(id === filterType) {
-                    btn.className = "px-3 py-1 bg-gothicPurple text-white rounded text-xs border border-purple-500";
+                    btn.className = "px-3 py-1 bg-gothicPurple text-white rounded text-xs border border-purple-500 whitespace-nowrap";
                 } else {
-                    btn.className = "px-3 py-1 bg-black text-gray-400 rounded text-xs border border-gray-700 hover:text-white";
+                    btn.className = "px-3 py-1 bg-black text-gray-400 rounded text-xs border border-gray-700 hover:text-white whitespace-nowrap";
                 }
             });
-
             loadOrders();
         }
 
@@ -171,7 +218,7 @@
             } else if (currentFilter === '30days') {
                 now.setDate(now.getDate() - 30);
             } else {
-                return null; // All time
+                return null; 
             }
             return now.toISOString();
         }
@@ -189,28 +236,20 @@
 
         async function loadOrders() {
             const list = document.getElementById('orders-list');
-            list.innerHTML = `<tr><td colspan="7" class="text-center text-zPurple p-4 animate-pulse">กำลังประมวลผลข้อมูล...</td></tr>`;
+            list.innerHTML = `<tr><td colspan="6" class="text-center text-zPurple p-4 animate-pulse">กำลังโหลดข้อมูล...</td></tr>`;
 
             let query = _supabase.from('ztech_orders').select('*').order('created_at', { ascending: false });
             
             let startDate = getStartDateISO();
-            if(startDate) {
-                query = query.gte('created_at', startDate);
-            }
+            if(startDate) query = query.gte('created_at', startDate);
 
             const { data, error } = await query;
-            
-            if (error) {
-                list.innerHTML = `<tr><td colspan="7" class="text-center text-red-500 p-4">❌ ระบบขัดข้อง: ${error.message}</td></tr>`;
-                return;
-            }
+            if (error) return;
 
-            rawOrdersData = data || []; // เก็บไว้สำหรับ Export
+            rawOrdersData = data || []; 
 
-            let sumRev = 0;
-            let sumProf = 0;
-            let successBillsCount = 0;
-            let itemAggregator = {}; // สำหรับ Top Sellers
+            let sumRev = 0, sumProf = 0, successBillsCount = 0;
+            let itemAggregator = {}; 
 
             if (data && data.length > 0) {
                 let htmlRows = '';
@@ -227,9 +266,8 @@
                         order.cart_items.forEach(item => {
                             let itemCost = costMap[item.name] || 0; 
                             totalOrderCost += (itemCost * item.weight); 
-                            itemsHTML += `<span class="bg-gray-800 text-[10px] px-1.5 py-0.5 rounded mr-1 mb-1 inline-block border border-gray-700">${item.name} <span class="text-gray-400">(${item.weight}g)</span></span>`;
+                            itemsHTML += `<span class="bg-gray-800 text-[10px] px-1.5 py-0.5 rounded mr-1 mb-1 inline-block border border-gray-700 whitespace-nowrap">${item.name} <span class="text-gray-400">(${item.weight}g)</span></span>`;
                             
-                            // นับยอด Top Seller เฉพาะบิลที่ไม่โดนยกเลิก
                             if(!isVoided) {
                                 if(!itemAggregator[item.name]) itemAggregator[item.name] = 0;
                                 itemAggregator[item.name] += item.weight;
@@ -238,69 +276,62 @@
                     }
 
                     let orderProfit = netPrice - totalOrderCost;
-                    
                     let rowClass = "hover:bg-gray-900 border-b border-gray-800 transition-colors";
                     let actionBtn = `<button onclick="voidBill('${order.id}', '${encodeURIComponent(JSON.stringify(order.cart_items))}')" class="text-red-500 hover:text-red-400 font-bold bg-gray-900 px-2 py-1 rounded border border-gray-700 text-xs">❌ Void</button>`;
                     let profitColor = orderProfit >= 0 ? 'text-neonGreen' : 'text-yellow-500';
 
-                    // ถ้าบิลถูกยกเลิก (Void)
                     if(isVoided) {
                         rowClass = "bg-red-950 border-b border-red-900 opacity-70";
-                        actionBtn = `<span class="text-red-400 text-xs font-bold border border-red-500 px-1 rounded">ยกเลิกแล้ว</span>`;
+                        actionBtn = `<span class="text-red-400 text-[10px] md:text-xs font-bold border border-red-500 px-1 rounded">ยกเลิก</span>`;
                         profitColor = "text-gray-500 line-through";
-                        netPrice = 0; // ไม่นับยอด
-                        orderProfit = 0; // ไม่นับกำไร
+                        netPrice = 0; orderProfit = 0; 
                     } else {
-                        sumRev += netPrice;
-                        sumProf += orderProfit;
-                        successBillsCount++;
+                        sumRev += netPrice; sumProf += orderProfit; successBillsCount++;
                     }
+
+                    // 🌟 สร้าง HTML ตามสิทธิ์ (Role)
+                    let profitCellHTML = userRole === 'admin' ? `<td class="p-3 text-right font-bold ${profitColor}">฿${orderProfit.toLocaleString()}</td>` : '';
+                    let actionCellHTML = userRole === 'admin' ? `<td class="p-3 text-center">${actionBtn}</td>` : '';
 
                     htmlRows += `
                     <tr class="${rowClass}">
                         <td class="p-3 text-gray-400 whitespace-nowrap">${date}</td>
-                        <td class="p-3 font-bold text-white">${order.seller_name} ${order.customer_id ? `<span class="text-[9px] text-gray-500 border border-gray-700 px-1 rounded block mt-1">${order.customer_id}</span>` : ''}</td>
-                        <td class="p-3 max-w-[200px] flex flex-wrap gap-1">${itemsHTML}</td>
-                        <td class="p-3 text-gray-400 text-xs">เงินสด/โอน</td>
+                        <td class="p-3 font-bold text-white whitespace-nowrap">${order.seller_name} ${order.customer_id ? `<span class="text-[9px] text-gray-500 border border-gray-700 px-1 rounded block mt-1">${order.customer_id}</span>` : ''}</td>
+                        <td class="p-3 min-w-[200px]">${itemsHTML}</td>
                         <td class="p-3 text-right font-bold ${isVoided ? 'text-gray-500 line-through' : 'text-goldDark'}">฿${(order.net_price||0).toLocaleString()}</td>
-                        <td class="p-3 text-right font-bold ${profitColor}">฿${orderProfit.toLocaleString()}</td>
-                        <td class="p-3 text-center">${actionBtn}</td>
+                        ${profitCellHTML}
+                        ${actionCellHTML}
                     </tr>
                     `;
                 });
 
                 list.innerHTML = htmlRows;
-
-                // Render Top Sellers
                 renderTopSellers(itemAggregator);
-
             } else {
-                list.innerHTML = `<tr><td colspan="7" class="text-center p-10 text-gray-600">-- ไม่มีข้อมูลในช่วงเวลานี้ --</td></tr>`;
+                list.innerHTML = `<tr><td colspan="6" class="text-center p-10 text-gray-600">-- ไม่มีข้อมูลในช่วงเวลานี้ --</td></tr>`;
                 document.getElementById('top-sellers-list').innerHTML = `<span class="text-gray-600 text-xs">ไม่มีข้อมูล</span>`;
             }
 
             document.getElementById('sum-revenue').innerText = `฿${sumRev.toLocaleString()}`;
             document.getElementById('sum-profit').innerText = `฿${sumProf.toLocaleString()}`;
-            document.getElementById('sum-orders').innerText = `${successBillsCount} บิล`;
+            document.getElementById('sum-orders').innerText = `${successBillsCount}`;
         }
 
         function renderTopSellers(aggregator) {
             const topList = document.getElementById('top-sellers-list');
             let sortedItems = Object.keys(aggregator).map(name => {
                 return { name: name, weight: aggregator[name] };
-            }).sort((a, b) => b.weight - a.weight).slice(0, 3); // เอาแค่ Top 3
+            }).sort((a, b) => b.weight - a.weight).slice(0, 3);
 
             if(sortedItems.length === 0) {
-                topList.innerHTML = `<span class="text-gray-600 text-xs">ไม่มีข้อมูล</span>`;
-                return;
+                topList.innerHTML = `<span class="text-gray-600 text-[10px] md:text-xs">ไม่มีข้อมูล</span>`; return;
             }
 
-            let html = '';
-            let medals = ['🥇', '🥈', '🥉'];
+            let html = ''; let medals = ['🥇', '🥈', '🥉'];
             sortedItems.forEach((item, index) => {
                 html += `<div class="flex justify-between items-center bg-black px-2 py-1 rounded border border-gray-800">
-                            <span class="text-gray-300 truncate w-2/3">${medals[index] || '▪️'} ${item.name}</span>
-                            <span class="text-neonGreen font-bold">${item.weight}g</span>
+                            <span class="text-gray-300 truncate w-2/3 text-[10px] md:text-xs">${medals[index] || '▪️'} ${item.name}</span>
+                            <span class="text-neonGreen font-bold text-[10px] md:text-xs">${item.weight}g</span>
                          </div>`;
             });
             topList.innerHTML = html;
@@ -309,129 +340,91 @@
         async function loadStockLogs() {
             const { data, error } = await _supabase.from('ztech_logs').select('*').order('created_at', { ascending: false }).limit(100);
             const list = document.getElementById('log-list');
-            
-            if (error) return;
+            if (error || !data) return;
 
-            if (data && data.length > 0) {
-                list.innerHTML = data.map(item => {
-                    let date = new Date(item.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
-                    let isOut = item.action_type === 'OUT';
-                    let actionClass = isOut ? 'text-red-500' : 'text-green-500';
-                    let actionText = isOut ? '📤 จ่ายออก' : '📥 รับเข้า';
-                    
-                    if(item.performed_by.includes("VOID")) {
-                        actionClass = 'text-yellow-500';
-                        actionText = '🔄 คืนสต๊อก (Void)';
-                    }
+            list.innerHTML = data.map(item => {
+                let date = new Date(item.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+                let isOut = item.action_type === 'OUT';
+                let actionClass = isOut ? 'text-red-500' : 'text-green-500';
+                let actionText = isOut ? '📤 จ่ายออก' : '📥 รับเข้า';
+                
+                if(item.performed_by.includes("VOID")) { actionClass = 'text-yellow-500'; actionText = '🔄 คืนสต๊อก'; }
 
-                    return `
-                    <tr class="hover:bg-gray-900 border-b border-gray-800 transition-colors">
-                        <td class="p-3 text-gray-400 whitespace-nowrap">${date}</td>
-                        <td class="p-3 text-white font-mono">${item.sku}</td>
-                        <td class="p-3 font-bold ${actionClass}">${actionText}</td>
-                        <td class="p-3 text-right font-bold text-white">${item.weight_change} g</td>
-                        <td class="p-3 text-right text-gray-400">${item.performed_by || 'Staff'}</td>
-                    </tr>
-                    `;
-                }).join('');
-            }
+                return `
+                <tr class="hover:bg-gray-900 border-b border-gray-800 transition-colors">
+                    <td class="p-3 text-gray-400 whitespace-nowrap">${date}</td>
+                    <td class="p-3 text-white font-mono whitespace-nowrap">${item.sku}</td>
+                    <td class="p-3 font-bold ${actionClass} whitespace-nowrap">${actionText}</td>
+                    <td class="p-3 text-right font-bold text-white whitespace-nowrap">${item.weight_change} g</td>
+                    <td class="p-3 text-right text-gray-400 whitespace-nowrap">${item.performed_by || 'Staff'}</td>
+                </tr>
+                `;
+            }).join('');
         }
 
-        // --- 🛑 ฟังก์ชัน ยกเลิกบิล (Void) ระดับ Enterprise ---
         async function voidBill(orderId, cartItemsEncoded) {
-            let pin = prompt("🔒 ยืนยันสิทธิ์ผู้จัดการ (PIN): \n*การยกเลิกบิลจะคืนสต๊อกสินค้าเข้าคลังอัตโนมัติ");
-            if(pin !== '0420') return alert("❌ รหัสผ่านไม่ถูกต้อง การยกเลิกถูกปฏิเสธ");
-
-            if(!confirm("⚠️ คุณแน่ใจหรือไม่ว่าจะยกเลิกบิลนี้? ข้อมูลไม่สามารถย้อนกลับได้")) return;
+            if(userRole !== 'admin') return alert("ไม่มีสิทธิ์ยกเลิกบิล");
+            let pin = prompt("🔒 ยืนยัน PIN ผู้จัดการ (0420):");
+            if(pin !== '0420') return alert("❌ รหัสผิด");
+            if(!confirm("⚠️ แน่ใจหรือไม่ว่าจะยกเลิกบิลนี้? ระบบจะดึงสต๊อกกลับเข้าคลัง")) return;
 
             try {
-                // 1. เปลี่ยนสถานะบิลเป็น CANCELLED
                 const { error: updateErr } = await _supabase.from('ztech_orders').update({ status: 'CANCELLED' }).eq('id', orderId);
                 if (updateErr) throw updateErr;
 
-                // 2. คืนสต๊อกเข้าคลัง (Loop)
                 let cartItems = JSON.parse(decodeURIComponent(cartItemsEncoded));
                 for (let item of cartItems) {
-                    // ดึงสต๊อกปัจจุบัน
                     const { data: invData } = await _supabase.from('ztech_inventory').select('stock_weight').eq('strain_name', item.name).single();
                     if(invData) {
-                        let newStock = invData.stock_weight + item.weight;
-                        await _supabase.from('ztech_inventory').update({ stock_weight: newStock }).eq('strain_name', item.name);
-                        // 3. บันทึกประวัติคืนของลง Log
-                        await _supabase.from('ztech_logs').insert([{ sku: item.sku || 'N/A', action_type: 'IN', weight_change: item.weight, performed_by: `SYS: VOID BILL (${orderId.substring(0,6)})` }]);
+                        await _supabase.from('ztech_inventory').update({ stock_weight: invData.stock_weight + item.weight }).eq('strain_name', item.name);
+                        await _supabase.from('ztech_logs').insert([{ sku: item.sku || 'N/A', action_type: 'IN', weight_change: item.weight, performed_by: `SYS: VOID BILL` }]);
                     }
                 }
-
-                alert("✅ ยกเลิกบิลและคืนสต๊อกเข้าคลังเรียบร้อยแล้ว");
-                loadOrders(); // รีเฟรชหน้าจอ
-                loadStockLogs();
-
-            } catch (error) {
-                alert("❌ เกิดข้อผิดพลาดในการยกเลิกบิล: " + error.message);
-                console.log("Error. Hint: Did you add 'status' column to ztech_orders table?");
-            }
+                alert("✅ ยกเลิกบิลสำเร็จ"); loadOrders(); loadStockLogs();
+            } catch (error) { alert("❌ เกิดข้อผิดพลาด: " + error.message); }
         }
 
-        // --- 📥 ฟังก์ชัน Export CSV ---
         function exportToCSV() {
-            if(rawOrdersData.length === 0) return alert("ไม่มีข้อมูลสำหรับดาวน์โหลด");
+            if(rawOrdersData.length === 0) return alert("ไม่มีข้อมูล");
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
             
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // รองรับภาษาไทย
-            csvContent += "Date,Customer,Customer ID,Total Weight (g),Discount,Net Price,Status,Items\n";
+            // ซ่อนคอลัมน์กำไรถ้าเป็นพนักงานโหลด
+            if(userRole === 'admin') {
+                csvContent += "Date,Customer,Customer ID,Total Weight (g),Discount,Net Price,Profit,Status,Items\n";
+            } else {
+                csvContent += "Date,Customer,Customer ID,Total Weight (g),Discount,Net Price,Status,Items\n";
+            }
 
             rawOrdersData.forEach(row => {
                 let dateStr = new Date(row.created_at).toLocaleString('th-TH');
                 let itemsStr = row.cart_items ? row.cart_items.map(i => `${i.name}(${i.weight}g)`).join(' | ') : '';
                 let statusStr = row.status || 'ACTIVE';
                 
-                let rowArray = [
-                    `"${dateStr}"`, 
-                    `"${row.seller_name || ''}"`, 
-                    `"${row.customer_id || ''}"`,
-                    row.total_weight || 0,
-                    row.discount_amount || 0,
-                    row.net_price || 0,
-                    statusStr,
-                    `"${itemsStr}"`
-                ];
+                let cost = 0;
+                if(row.cart_items && userRole === 'admin') {
+                    row.cart_items.forEach(i => cost += (costMap[i.name] || 0) * i.weight);
+                }
+                let profit = (row.net_price || 0) - cost;
+                
+                let rowArray = [];
+                if(userRole === 'admin') {
+                    rowArray = [`"${dateStr}"`, `"${row.seller_name || ''}"`, `"${row.customer_id || ''}"`, row.total_weight || 0, row.discount_amount || 0, row.net_price || 0, profit, statusStr, `"${itemsStr}"`];
+                } else {
+                    rowArray = [`"${dateStr}"`, `"${row.seller_name || ''}"`, `"${row.customer_id || ''}"`, row.total_weight || 0, row.discount_amount || 0, row.net_price || 0, statusStr, `"${itemsStr}"`];
+                }
+                
                 csvContent += rowArray.join(",") + "\n";
             });
 
-            var encodedUri = encodeURI(csvContent);
             var link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `ZTech_Report_${currentFilter}_${new Date().getTime()}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", `ZTech_Report_${currentFilter}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
         async function generateAIReport() {
-            const btn = document.getElementById('ai-btn');
-            btn.innerHTML = "⏳ กำลังส่ง...";
-            btn.disabled = true;
-            try {
-                let revStr = document.getElementById('sum-revenue').innerText;
-                let profStr = document.getElementById('sum-profit').innerText;
-                let orderStr = document.getElementById('sum-orders').innerText;
-                let msgText = `📊 Z-Tech AI Executive Report 📊\nประจำช่วงเวลา: ${document.getElementById('btn-'+currentFilter).innerText}\n━━━━━━━━━━━━━━\n💰 ยอดขายสุทธิ: ${revStr}\n📈 กำไรขั้นต้น: ${profStr}\n🧾 จำนวนบิลสำเร็จ: ${orderStr}\n━━━━━━━━━━━━━━\n⚡ AI Analysis: ดำเนินการปิดยอดเรียบร้อย ข้อมูลถูกเข้ารหัสและซิงค์ขึ้น Cloud อย่างสมบูรณ์`;
-
-                const token = '2mqUKe/Rb3dM/vKhOPvuXB8ag0eCS7t8ITrg5+NRiTWKXhgeA/aypMOZc5aDDvpufwkkeioOULx খাঁOPvuXB8ag0eCS7t8ITrg5+NRiTWKXhgeA/aypMOZc5aDDvpufwkkeioOULxPu7/57MGs7Y1HGGfMW7xZd9vQD0lyY5DID8X9dfYv6AYHm3q1vqLDHzsrPO51asEQDb7stjyMSgdB04t89/1O/w1cDnyilFU=';
-                const userId = 'Cbf93761b1ac023b9fbe28afa7efbfb16'; 
-                await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.line.me/v2/bot/message/push'), {
-                    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ to: userId, messages: [{ type: 'text', text: msgText }] })
-                });
-                alert("✅ ส่งเข้า LINE ผู้บริหารเรียบร้อย!");
-            } catch (error) {
-                alert("❌ ระบบขัดข้อง: " + error.message);
-            } finally {
-                btn.innerHTML = "🤖 ส่ง AI เข้า LINE";
-                btn.disabled = false;
-            }
+            alert("ฟีเจอร์นี้เตรียมพร้อมสำหรับเชื่อมต่อ AI Backend ค่ะ");
         }
-
-        initDashboard();
     </script>
 </body>
 </html>
