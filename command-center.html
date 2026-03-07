@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Highbud 420 - Command Center</title>
+    <style>
+        /* สถาปัตยกรรมสีและโครงสร้างแบบ Dark Gothic Tech */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #050505; /* ดำลึกสุดยอด */
+            color: #e0e0e0;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden; /* ซ่อนแถบเลื่อนให้ดูเป็นระบบปิด */
+        }
+        /* แถบหัวเรื่องด้านบน */
+        .header {
+            height: 55px;
+            background-color: #0a0a0a;
+            border-bottom: 1px solid #1a4d2e; /* เส้นขอบสีเขียวเข้ม */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 25px;
+            box-shadow: 0 4px 15px rgba(0, 255, 102, 0.05);
+        }
+        /* ชื่อร้านเถ้าแก่ */
+        .shop-title {
+            font-size: 26px;
+            font-weight: bold;
+            color: #00ff66; /* เขียวนีออนสายเขียว */
+            text-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+            letter-spacing: 2px;
+        }
+        /* ลายเซ็น Z Tech เนียนๆ */
+        .z-tech-watermark {
+            font-size: 11px;
+            color: #444; /* สีเทาเข้ม กลืนไปกับพื้นหลังแต่ยังมองเห็น */
+            letter-spacing: 3px;
+            transition: color 0.3s ease;
+        }
+        .z-tech-watermark:hover {
+            color: #00ff66; /* เรืองแสงเมื่อเมาส์ชี้ (Gimmick เล็กๆ) */
+        }
+        /* พื้นที่แสดงผลหลัก */
+        .container {
+            display: flex;
+            width: 100%;
+            height: calc(100% - 55px);
+        }
+        /* ฝั่งซ้าย 60% Dashboard */
+        .dashboard-section {
+            width: 60%;
+            height: 100%;
+            border-right: 1px solid #1a4d2e;
+            background-color: #000;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        /* ฝั่งขวา 40% กล้องวงจรปิด */
+        .camera-section {
+            width: 40%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background-color: #080808;
+            padding: 10px;
+            box-sizing: border-box;
+            gap: 10px;
+        }
+        /* กล่องจำลองสำหรับใส่กล้อง IP Cam */
+        .cam-placeholder {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #0c0c0c;
+            border: 1px dashed #222;
+            border-radius: 5px;
+            color: #555;
+            position: relative;
+        }
+        .cam-placeholder h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #888;
+            letter-spacing: 1px;
+        }
+        /* เอฟเฟกต์จุดสีแดงกะพริบ บ่งบอกว่ากำลังบันทึกภาพ (จิตวิทยาความน่าเชื่อถือ) */
+        .rec-dot {
+            height: 8px;
+            width: 8px;
+            background-color: #ff003c;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; box-shadow: 0 0 5px #ff003c; }
+            50% { opacity: 0.2; box-shadow: none; }
+            100% { opacity: 1; box-shadow: 0 0 5px #ff003c; }
+        }
+        .cam-hint {
+            font-size: 12px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="shop-title">🌿 HIGHBUD 420 : COMMAND CENTER</div>
+        <div class="z-tech-watermark">ARCHITECTED BY Z TECH</div>
+    </div>
+
+    <div class="container">
+        <div class="dashboard-section">
+            <iframe src="https://zeekaz.github.io/z-tech-inventory/dashboard.html" title="Z-Tech Dashboard"></iframe>
+        </div>
+        
+        <div class="camera-section">
+            <div class="cam-placeholder">
+                <h3><span class="rec-dot"></span>FARM CAM 01 : INDOOR GROW</h3>
+                <span class="cam-hint">[ Waiting for IP Cam RTSP Stream ]</span>
+                <span class="cam-hint" style="margin-top:5px; font-size:9px;">sys.integrate(cam_01.ip);</span>
+            </div>
+            <div class="cam-placeholder">
+                <h3><span class="rec-dot"></span>FARM CAM 02 : DRYING ROOM</h3>
+                <span class="cam-hint">[ Waiting for IP Cam RTSP Stream ]</span>
+                <span class="cam-hint" style="margin-top:5px; font-size:9px;">sys.integrate(cam_02.ip);</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
