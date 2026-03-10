@@ -52,8 +52,11 @@
             <p id="role-display" class="text-gray-500 mt-1 text-xs md:text-sm">Enterprise Financial Analysis</p>
         </div>
         <div class="flex flex-wrap gap-2">
+            <button onclick="exportPhorThor28()" class="px-3 md:px-4 py-2 bg-[#0a2a0a] text-neonGreen border border-[#39ff14] rounded hover:bg-[#114411] transition-colors text-xs md:text-sm font-bold flex items-center gap-1 shadow-[0_0_10px_rgba(57,255,20,0.3)]">
+                📄 ภ.ท.28 (ส่งรัฐ)
+            </button>
             <button onclick="exportToCSV()" class="px-3 md:px-4 py-2 bg-gray-800 text-white border border-gray-600 rounded hover:bg-gray-700 transition-colors text-xs md:text-sm font-bold flex items-center gap-1">
-                📥 โหลดรายงาน
+                📥 โหลดรายงานบิล
             </button>
             <button id="ai-btn" onclick="generateAIReport()" class="px-3 md:px-4 py-2 bg-gothicPurple text-white border border-purple-500 rounded hover:bg-purple-900 transition-colors text-xs md:text-sm font-bold shadow-[0_0_10px_rgba(74,14,78,0.5)]">
                 🤖 ส่ง AI เข้า LINE
@@ -143,10 +146,20 @@
         const supabaseKey = 'sb_publishable_mirbWPp7tEPi5YiTFPnSSw_BZsKkfLa'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        const SYSTEM_PINS = {
+            '0420': { role: 'CEO', name: 'CEO Z' },
+            '8888': { role: 'Manager', name: 'ผู้จัดการร้าน' },
+            '1111': { role: 'Staff', name: 'พนักงาน A (กะเช้า)' },
+            '2222': { role: 'Staff', name: 'พนักงาน B (กะดึก)' }
+        };
+
         let costMap = {}; 
         let currentFilter = 'today';
         let rawOrdersData = []; 
         let userRole = ''; 
+        
+        // 🌟 ตัวแปรเก็บข้อมูลคลินิก
+        let clinicConfig = { isActive: false, doctorName: '', doctorLicense: '' };
 
         document.getElementById('pin-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') login();
@@ -155,22 +168,21 @@
         function login() {
             const pin = document.getElementById('pin-input').value;
             const errorText = document.getElementById('login-error');
+            const user = SYSTEM_PINS[pin];
             
-            if (pin === '0420') {
-                userRole = 'admin';
+            if (user) {
+                userRole = user.role;
                 document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('role-display').innerText = "Logged in as: CEO (Admin)";
-                document.getElementById('role-display').className = "text-goldDark mt-1 text-xs md:text-sm font-bold";
-                initDashboard();
-            } else if (pin === '1111') {
-                userRole = 'staff';
-                document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('role-display').innerText = "Logged in as: STAFF (View Only)";
+                document.getElementById('role-display').innerText = `Logged in as: ${user.name} (${user.role})`;
                 
-                document.getElementById('profit-card').classList.add('hidden');
-                document.getElementById('col-profit').classList.add('hidden');
-                document.getElementById('col-action').classList.add('hidden');
-                
+                if (userRole === 'CEO') {
+                    document.getElementById('role-display').className = "text-goldDark mt-1 text-xs md:text-sm font-bold";
+                } else {
+                    document.getElementById('role-display').className = "text-gray-400 mt-1 text-xs md:text-sm font-bold";
+                    document.getElementById('profit-card').classList.add('hidden');
+                    document.getElementById('col-profit').classList.add('hidden');
+                    document.getElementById('col-action').classList.add('hidden');
+                }
                 initDashboard();
             } else {
                 errorText.style.display = 'block';
@@ -216,12 +228,20 @@
             return now.toISOString();
         }
 
+        // 🌟 โหลดข้อมูลคลินิกและข้อมูลบัญชี
         async function initDashboard() {
+            try {
+                const { data: clinicData } = await _supabase.from('ztech_settings').select('*').eq('id', 1).single();
+                if (clinicData) {
+                    clinicConfig.isActive = clinicData.clinic_mode;
+                    clinicConfig.doctorName = clinicData.doctor_name || '';
+                    clinicConfig.doctorLicense = clinicData.doctor_license || '';
+                }
+            } catch (err) { console.warn("Clinic config load failed:", err); }
+
             const { data: invData } = await _supabase.from('ztech_inventory').select('strain_name, cost_price');
             if (invData) {
-                invData.forEach(item => {
-                    costMap[item.strain_name] = item.cost_price || 0;
-                });
+                invData.forEach(item => { costMap[item.strain_name] = item.cost_price || 0; });
             }
             loadOrders();
             loadStockLogs();
@@ -270,7 +290,6 @@
 
                     let orderProfit = netPrice - totalOrderCost;
                     let rowClass = "hover:bg-gray-900 border-b border-gray-800 transition-colors";
-                    // 🌟 แก้ไข: ถอดรหัส 0420 ออกจาก prompt ตรงนี้แล้วค่ะ
                     let actionBtn = `<button onclick="voidBill('${order.id}', '${encodeURIComponent(JSON.stringify(order.cart_items))}')" class="text-red-500 hover:text-red-400 font-bold bg-gray-900 px-2 py-1 rounded border border-gray-700 text-xs">❌ Void</button>`;
                     let profitColor = orderProfit >= 0 ? 'text-neonGreen' : 'text-yellow-500';
 
@@ -283,8 +302,8 @@
                         sumRev += netPrice; sumProf += orderProfit; successBillsCount++;
                     }
 
-                    let profitCellHTML = userRole === 'admin' ? `<td class="p-3 text-right font-bold ${profitColor}">฿${orderProfit.toLocaleString()}</td>` : '';
-                    let actionCellHTML = userRole === 'admin' ? `<td class="p-3 text-center">${actionBtn}</td>` : '';
+                    let profitCellHTML = userRole === 'CEO' ? `<td class="p-3 text-right font-bold ${profitColor}">฿${orderProfit.toLocaleString()}</td>` : '';
+                    let actionCellHTML = userRole === 'CEO' ? `<td class="p-3 text-center">${actionBtn}</td>` : '';
 
                     htmlRows += `
                     <tr class="${rowClass}">
@@ -356,10 +375,13 @@
         }
 
         async function voidBill(orderId, cartItemsEncoded) {
-            if(userRole !== 'admin') return alert("ไม่มีสิทธิ์ยกเลิกบิล");
-            // 🌟 แก้ไข: ถอดคำใบ้รหัส 0420 ออกแล้ว
-            let pin = prompt("🔒 ยืนยันสิทธิ์ผู้จัดการ (กรุณาใส่รหัส PIN):");
-            if(pin !== '0420') return alert("❌ รหัสผิด");
+            if(userRole !== 'CEO') return alert("❌ ไม่มีสิทธิ์ยกเลิกบิล! (เฉพาะ CEO)");
+            
+            let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (กรุณาใส่รหัส PIN):");
+            if(!pin) return;
+            let user = SYSTEM_PINS[pin];
+            if(!user || user.role !== 'CEO') return alert("❌ รหัสผิด หรือไม่มีสิทธิ์!");
+
             if(!confirm("⚠️ แน่ใจหรือไม่ว่าจะยกเลิกบิลนี้? ระบบจะดึงสต๊อกกลับเข้าคลัง")) return;
 
             try {
@@ -382,7 +404,7 @@
             if(rawOrdersData.length === 0) return alert("ไม่มีข้อมูล");
             
             let csvContent = "\uFEFF"; 
-            if(userRole === 'admin') {
+            if(userRole === 'CEO') {
                 csvContent += "Date,Customer,Customer ID,Total Weight (g),Discount,Net Price,Profit,Status,Items\n";
             } else {
                 csvContent += "Date,Customer,Customer ID,Total Weight (g),Discount,Net Price,Status,Items\n";
@@ -394,13 +416,13 @@
                 let statusStr = row.status || 'ACTIVE';
                 
                 let cost = 0;
-                if(row.cart_items && userRole === 'admin') {
+                if(row.cart_items && userRole === 'CEO') {
                     row.cart_items.forEach(i => cost += (costMap[i.name] || 0) * i.weight);
                 }
                 let profit = (row.net_price || 0) - cost;
                 
                 let rowArray = [];
-                if(userRole === 'admin') {
+                if(userRole === 'CEO') {
                     rowArray = [`"${dateStr}"`, `"${row.seller_name || ''}"`, `"${row.customer_id || ''}"`, row.total_weight || 0, row.discount_amount || 0, row.net_price || 0, profit, statusStr, `"${itemsStr}"`];
                 } else {
                     rowArray = [`"${dateStr}"`, `"${row.seller_name || ''}"`, `"${row.customer_id || ''}"`, row.total_weight || 0, row.discount_amount || 0, row.net_price || 0, statusStr, `"${itemsStr}"`];
@@ -418,8 +440,56 @@
             document.body.removeChild(link);
         }
 
+        // 🌟 ฟังก์ชันใหม่: ส่งออกฟอร์ม ภ.ท.28
+        function exportPhorThor28() {
+            if(rawOrdersData.length === 0) return alert("ไม่มีข้อมูลสำหรับการออกรายงาน ภ.ท.28");
+            
+            let csvContent = "\uFEFF"; // ป้องกันภาษาไทยเพี้ยนใน Excel
+            csvContent += "ลำดับ,วันที่รับบริการ,ชื่อ-สกุล ผู้ป่วย,เลขบัตรประชาชน/พาสปอร์ต,โรค/อาการที่สั่งจ่าย,ชื่อกัญชา/ตำรับกัญชา,จำนวนที่จ่าย (กรัม),ชื่อผู้สั่งจ่าย,เลขที่ใบประกอบวิชาชีพ\n";
+
+            let rowIndex = 1;
+            rawOrdersData.forEach(row => {
+                // ข้ามบิลที่ถูกยกเลิก ไม่ต้องส่งรายงานรัฐ
+                if (row.status === 'CANCELLED' || row.status === 'VOID') return; 
+                
+                let dateStr = new Date(row.created_at).toLocaleDateString('th-TH');
+                let customer = row.seller_name || '-';
+                let idCard = row.customer_id || '-';
+                let symptoms = "ส่งเสริมสุขภาพ/บรรเทาอาการเบื้องต้น"; 
+                
+                let itemsStr = row.cart_items ? row.cart_items.map(i => i.name).join(', ') : '-';
+                let totalWeight = row.total_weight || 0;
+                
+                // ดึงข้อมูลหมอมาใส่ (ถ้าเปิดโหมดคลินิกไว้)
+                let docName = clinicConfig.isActive ? clinicConfig.doctorName : '-';
+                let docLicense = clinicConfig.isActive ? clinicConfig.doctorLicense : '-';
+
+                let rowArray = [
+                    rowIndex++,
+                    `"${dateStr}"`,
+                    `"${customer}"`,
+                    `"${idCard}"`,
+                    `"${symptoms}"`,
+                    `"${itemsStr}"`,
+                    totalWeight,
+                    `"${docName}"`,
+                    `"${docLicense}"`
+                ];
+                csvContent += rowArray.join(",") + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `รายงาน_ภท28_${currentFilter}.csv`);
+            document.body.appendChild(link); 
+            link.click(); 
+            document.body.removeChild(link);
+        }
+
         async function generateAIReport() {
-            if (userRole !== 'admin') return alert("ฟีเจอร์นี้สงวนไว้สำหรับผู้บริหารเท่านั้นค่ะ");
+            if (userRole !== 'CEO') return alert("❌ ฟีเจอร์นี้สงวนไว้สำหรับผู้บริหารเท่านั้นค่ะ");
             
             const btn = document.getElementById('ai-btn');
             btn.innerHTML = "⏳ กำลังส่ง...";

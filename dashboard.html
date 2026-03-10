@@ -80,6 +80,7 @@
         <div style="text-align: center; margin-bottom: 25px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
             <button onclick="checkAdmin('manage')" class="btn-create">➕ เพิ่มรายการสินค้าใหม่</button>
             <a href="log.html" class="btn-create" style="background: #8b0000; border-color: #550000; color: white;">📊 ประวัติบิล & บัญชี</a>
+            <button onclick="openClinicConfig()" class="btn-create" style="background: #0a2a0a; color: #39ff14; border-color: #39ff14;">🏥 คลินิก Z-Tech</button>
         </div>
 
         <div class="filter-section" style="position: sticky; top: 0; z-index: 10; background: #111; padding-bottom: 10px; border-bottom: 1px solid #333;">
@@ -273,6 +274,34 @@
         </div>
     </div>
 
+    <div id="clinicModal" class="modal">
+        <div class="modal-content" style="max-width: 500px; border-color: #39ff14;">
+            <span class="close" onclick="closeClinicConfig()">&times;</span>
+            <h2 style="color:#39ff14; margin-top:0; text-align:center; border-bottom: 1px solid #333; padding-bottom: 10px;">
+                🏥 ตั้งค่าระบบคลินิก (Telemedicine)
+            </h2>
+            <p class="text-center text-[12px] text-gray-500 mb-4" style="text-align:center; color:#888;">ตั้งค่านี้จะมีผลกับใบเสร็จ ภ.ท.28 ของทุกสาขาทันที</p>
+            
+            <div class="form-group" style="text-align: center; margin-top: 20px; background: #050505; padding: 15px; border-radius: 8px; border: 1px dashed #39ff14;">
+                <label style="font-size: 16px; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="c_clinic_mode" style="width: 20px; height: 20px; cursor: pointer;">
+                    <span style="color: #39ff14;">🟢 เปิดใช้งานโหมดคลินิก (ประทับตราแพทย์ลงในบิล)</span>
+                </label>
+            </div>
+            <div class="grid-2" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label style="color:#39ff14;">ชื่อแพทย์ผู้สั่งจ่าย</label>
+                    <input type="text" id="c_doctor_name" class="form-input" style="border-color: #39ff14; background: #111;" placeholder="เช่น นพ. โซอี้">
+                </div>
+                <div class="form-group">
+                    <label style="color:#39ff14;">เลขที่ใบประกอบวิชาชีพ</label>
+                    <input type="text" id="c_doctor_license" class="form-input" style="border-color: #39ff14; background: #111;" placeholder="เช่น ว.XXXXX">
+                </div>
+            </div>
+            <button class="btn-submit" onclick="saveClinicConfig()" style="background: #006400; border-color: #004400; color: white;">💾 บันทึกการตั้งค่าระบบแพทย์</button>
+        </div>
+    </div>
+
     <script>
         const supabaseUrl = 'https://zwpagcqoopvinufsgluc.supabase.co';
         const supabaseKey = 'sb_publishable_mirbWPp7tEPi5YiTFPnSSw_BZsKkfLa'; 
@@ -378,7 +407,6 @@
             }
         }
 
-        // 🛡️ เช็กสิทธิ์ตอนกดปุ่ม เพิ่มรายการสินค้าใหม่ (เฉพาะ CEO)
         function checkAdmin(targetPage) {
             let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (กรุณาใส่รหัส PIN):");
             if (!pin) return;
@@ -422,7 +450,6 @@
             finally { btn.innerHTML = "💾 บันทึกข้อมูลลงระบบ"; btn.disabled = false; loading.style.display = 'none'; }
         }
 
-        // 🌟 1. ฟังก์ชันเปิดหน้าต่าง Edit สินค้า (เช็กสิทธิ์ CEO)
         function openEditModal(sku) {
             let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (กรุณาใส่รหัส PIN):");
             if (!pin) return;
@@ -434,7 +461,7 @@
                 document.getElementById('e_sku').value = item.sku;
                 document.getElementById('e_strain').value = item.strain_name || '';
                 document.getElementById('e_category').value = item.category || 'ดอก';
-                toggleGrade('e_category', 'e_grade'); // เช็กการเปิดปิดช่องเกรด
+                toggleGrade('e_category', 'e_grade'); 
                 document.getElementById('e_grade').value = item.grade || '-';
                 document.getElementById('e_farm').value = item.farm_name || '';
                 document.getElementById('e_cost').value = item.cost_price || 0;
@@ -450,7 +477,6 @@
 
         function closeEditModal() { document.getElementById('editProductModal').style.display = 'none'; }
 
-        // 🌟 2. ฟังก์ชันอัปเดตข้อมูลที่แก้ไข (ยิงขึ้น Supabase)
         async function saveEditedProduct() {
             const sku = document.getElementById('e_sku').value;
             const strain_name = document.getElementById('e_strain').value.trim();
@@ -482,19 +508,13 @@
                 }).eq('sku', sku);
 
                 if (updateErr) throw updateErr;
-
                 alert("✅ อัปเดตข้อมูลสินค้าสำเร็จ!");
                 closeEditModal();
-                loadInventory(); // โหลดตารางใหม่
-            } catch (error) {
-                alert("❌ เกิดข้อผิดพลาด: " + error.message);
-            } finally {
-                btn.innerHTML = "💾 บันทึกการเปลี่ยนแปลง"; btn.disabled = false;
-                loading.style.display = 'none';
-            }
+                loadInventory(); 
+            } catch (error) { alert("❌ เกิดข้อผิดพลาด: " + error.message);
+            } finally { btn.innerHTML = "💾 บันทึกการเปลี่ยนแปลง"; btn.disabled = false; loading.style.display = 'none'; }
         }
 
-        // --- ส่วนเติมสต๊อก (รับของเข้า) ---
         let targetStockSku = ''; let targetStockStrain = ''; let currentStockWeight = 0; let restockRoleName = '';
         function openAddStockModal(sku, strain, currentWeight) {
             let pin = prompt("🔒 ยืนยันสิทธิ์ผู้บริหารหรือผู้จัดการ (PIN):"); if (!pin) return;
@@ -517,7 +537,6 @@
             } catch (err) { alert("❌ เกิดข้อผิดพลาด: " + err.message); } finally { btn.innerHTML = "✅ ยืนยันการรับเข้า"; btn.disabled = false; }
         }
 
-        // --- รูปภาพและ QR ---
         function openImageView(sku, strain_name, imgUrl) {
             targetSkuForUpload = sku; document.getElementById('viewImgTitle').innerText = strain_name;
             const imgDisplay = document.getElementById('viewImgDisplay'); const imgPlaceholder = document.getElementById('viewImgPlaceholder'); const btnDelete = document.getElementById('btn-delete-img');
@@ -556,6 +575,63 @@
         function printQR() {
             let imgSrc = document.getElementById('modalQrImg').src; let title = document.getElementById('modalStrain').innerText; let sku = document.getElementById('modalSku').innerText;
             let printWindow = window.open('', '', 'width=600,height=600'); printWindow.document.write(`<html><body style="text-align:center; font-family:sans-serif; margin-top:50px;"><h2 style="margin-bottom: 5px;">${title}</h2><p style="font-family:monospace; font-size:18px; margin-top:0;">${sku}</p><img src="${imgSrc}" style="width:200px; height:200px; border:2px solid #000; padding:10px;"><script>setTimeout(() => { window.print(); window.close(); }, 500);<\/script></body></html>`);
+        }
+
+        // 🌟 ฟังก์ชันใหม่: ระบบจัดการคลินิกแพทย์
+        async function openClinicConfig() {
+            let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหารสูงสุด (PIN):");
+            if (!pin) return;
+            let user = SYSTEM_PINS[pin];
+            if (user && user.role === 'CEO') {
+                const loading = document.getElementById('loadingOverlay');
+                loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "⏳ กำลังโหลดข้อมูลคลินิก...";
+                try {
+                    const { data, error } = await _supabase.from('ztech_settings').select('*').eq('id', 1).single();
+                    if (error) throw error;
+                    if(data) {
+                        document.getElementById('c_clinic_mode').checked = data.clinic_mode;
+                        document.getElementById('c_doctor_name').value = data.doctor_name || '';
+                        document.getElementById('c_doctor_license').value = data.doctor_license || '';
+                    }
+                    document.getElementById('clinicModal').style.display = 'block';
+                } catch (err) {
+                    alert("❌ โหลดข้อมูลไม่สำเร็จ: " + err.message);
+                } finally {
+                    loading.style.display = 'none';
+                }
+            } else {
+                alert("❌ ไม่มีสิทธิ์เข้าถึง! (สงวนสิทธิ์เฉพาะ CEO 0420 เท่านั้น)");
+            }
+        }
+
+        function closeClinicConfig() {
+            document.getElementById('clinicModal').style.display = 'none';
+        }
+
+        async function saveClinicConfig() {
+            const clinic_mode = document.getElementById('c_clinic_mode').checked;
+            const doctor_name = document.getElementById('c_doctor_name').value.trim();
+            const doctor_license = document.getElementById('c_doctor_license').value.trim();
+            
+            const loading = document.getElementById('loadingOverlay');
+            loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "⏳ กำลังบันทึกข้อมูลคลินิก...";
+            
+            try {
+                const { error } = await _supabase.from('ztech_settings').update({
+                    clinic_mode: clinic_mode,
+                    doctor_name: doctor_name,
+                    doctor_license: doctor_license,
+                    updated_at: new Date().toISOString()
+                }).eq('id', 1);
+                
+                if (error) throw error;
+                alert("✅ บันทึกการตั้งค่าคลินิกเรียบร้อยแล้ว!");
+                closeClinicConfig();
+            } catch (err) {
+                alert("❌ บันทึกไม่สำเร็จ: " + err.message);
+            } finally {
+                loading.style.display = 'none';
+            }
         }
 
         loadInventory();
