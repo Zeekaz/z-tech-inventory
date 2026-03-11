@@ -98,6 +98,14 @@
             <input type="text" id="customer-id" placeholder="เลขบัตร ปชช. / เลขใบอนุญาต (ภ.ท.28)" class="w-full bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-xs">
         </div>
 
+        <div class="mb-3 shrink-0 bg-[#0a0a0a] p-2 rounded border border-dashed border-[#b5952f]">
+            <label class="text-[#d4af37] text-xs font-bold mb-1 flex items-center justify-between">
+                <span>📸 ถ่ายรูปหลักฐาน (สินค้า/แพ็กเกจ)</span>
+                <span class="text-red-500 text-[10px]">*บังคับ</span>
+            </label>
+            <input type="file" id="order-evidence" accept="image/*" capture="environment" class="w-full bg-black text-white text-[10px] border border-gray-800 p-1 rounded focus:outline-none focus:border-neonGreen">
+        </div>
+
         <div class="flex-grow overflow-y-auto mb-3 border-b border-gray-800 pb-2" id="cart-items">
             <p class="text-gray-600 text-center mt-5 text-sm">ตะกร้าว่างเปล่า...</p>
         </div>
@@ -178,7 +186,6 @@
             grid.innerHTML = '<p class="text-zPurple animate-pulse col-span-3 lg:col-span-5 text-center tracking-widest text-sm">⏳ โหลดข้อมูล...</p>';
 
             try {
-                // เซนิธยืนยันแล้วว่าคำสั่งนี้โหลด cost_price มาเก็บไว้ใน globalInventory ด้วยแล้วค่ะ
                 const { data, error } = await _supabase.from('ztech_inventory').select('*').order('last_updated', { ascending: false });
                 if (error) throw error;
                 globalInventory = data || []; 
@@ -367,8 +374,8 @@
             document.getElementById('total-price').className = `${activeColor} text-xl`;
         }
 
-        // 🌟 อัปเกรดฟังก์ชันส่ง LINE ให้รองรับงบรับรอง (โชว์ทุน ไม่โชว์ยอดขาย)
-        async function sendLineSlip(customer, customerId, cartItems, totalW, subtotalP, finalP, discount, staffName, orderType, totalCost) {
+        // 🌟 อัปเกรดให้ยิงรูปภาพไปพร้อมกับข้อความใน LINE
+        async function sendLineSlip(customer, customerId, cartItems, totalW, subtotalP, finalP, discount, staffName, orderType, totalCost, evidenceUrl) {
             const token = '2mqUKe/Rb3dM/vKhOPvuXB8ag0eCS7t8ITrg5+NRiTWKXhgeA/aypMOZc5aDDvpufwkkeioOULxPu7/57MGs7Y1HGGfMW7xZd9vQD0lyY5DID8X9dfYv6AYHm3q1vqLDHzsrPO51asEQDb7stjyMSgdB04t89/1O/w1cDnyilFU=';
             const userId = 'Cbf93761b1ac023b9fbe28afa7efbfb16'; 
             let itemList = cartItems.map(item => `▪️ ${item.name}: ${item.weight}g`).join('\n');
@@ -394,14 +401,23 @@
                 msgText += `🔥 ยอดสุทธิ: ฿${finalP}\n👨‍💼 ผู้ทำรายการ: ${staffName}\n━━━━━━━━━━━━━━\n📦 รายการ:\n${itemList}`;
             }
             
+            // สร้าง Payload แบบอาร์เรย์ เผื่อมีรูปให้ยิงต่อกัน
+            let messagesArray = [{ type: 'text', text: msgText }];
+            if (evidenceUrl) {
+                messagesArray.push({
+                    type: 'image',
+                    originalContentUrl: evidenceUrl,
+                    previewImageUrl: evidenceUrl
+                });
+            }
+
             await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.line.me/v2/bot/message/push'), { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
-                body: JSON.stringify({ to: userId, messages: [{ type: 'text', text: msgText }] }) 
+                body: JSON.stringify({ to: userId, messages: messagesArray }) 
             }).catch(e => console.warn(e));
         }
 
-        // 🌟 อัปเกรดฟังก์ชัน Checkout ให้รับพารามิเตอร์ orderType (SALE / GIVEAWAY)
         async function checkout(orderType = 'SALE') {
             let customer = document.getElementById('customer-name').value.trim(); 
             let customerId = document.getElementById('customer-id').value.trim(); 
@@ -410,6 +426,12 @@
             let validCart = cart.filter(item => item.weight > 0); 
             if(validCart.length === 0) return alert("⚠️ ตะกร้าว่างเปล่า!");
 
+            // 🌟 เช็กระบบรูปหลักฐานก่อนส่งของ
+            const evidenceFile = document.getElementById('order-evidence').files[0];
+            if (orderType === 'SALE' && !evidenceFile) {
+                return alert("⚠️ บังคับ! กรุณาแนบรูปถ่ายหลักฐาน (สินค้าก่อนแพ็ก/บิล) ก่อนยืนยันคำสั่งซื้อค่ะ!");
+            }
+
             if(orderType === 'GIVEAWAY') {
                 if(!confirm("🎁 ยืนยันการตัดสต๊อกเป็น 'งบรับรอง (แจกฟรี)' ใช่หรือไม่?\\n(ยอดขายจะเป็น 0 และจะบันทึกเป็นต้นทุนบริษัท)")) return;
             }
@@ -417,7 +439,6 @@
             let pin = prompt("👤 ยืนยันรหัสพนักงาน (PIN) เพื่อปิดบิล:"); if (!pin) return;
             let staffUser = SYSTEM_PINS[pin]; if (!staffUser) return alert("❌ รหัสพนักงานไม่ถูกต้อง! ไม่สามารถทำรายการได้");
             
-            // ล็อกความปลอดภัย: งบรับรองให้เฉพาะ CEO กับ Manager กดได้เท่านั้น!
             if(orderType === 'GIVEAWAY' && staffUser.role !== 'CEO' && staffUser.role !== 'Manager') {
                 return alert("❌ ไม่มีสิทธิ์! (การแจกงบรับรองสงวนสิทธิ์เฉพาะ CEO หรือ Manager เท่านั้น)");
             }
@@ -426,15 +447,28 @@
 
             const btn = document.getElementById('checkout-btn'); 
             const giveawayBtn = document.getElementById('giveaway-btn');
+            const btnOriginalText = btn.innerHTML;
             btn.innerHTML = "⏳ กำลังบันทึก..."; btn.disabled = true;
             if(giveawayBtn) giveawayBtn.disabled = true;
 
             try {
+                let finalEvidenceUrl = null;
+                
+                // 🌟 อัปโหลดหลักฐานก่อนแพ็กขึ้นคลาวด์
+                if (evidenceFile) {
+                    btn.innerHTML = "📸 อัปโหลดหลักฐาน...";
+                    const evExt = evidenceFile.name.split('.').pop(); 
+                    const evName = `outbound_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${evExt}`;
+                    const { error: evUploadErr } = await _supabase.storage.from('ztech_evidence').upload(evName, evidenceFile); 
+                    if (evUploadErr) throw evUploadErr;
+                    const { data: evUrlData } = _supabase.storage.from('ztech_evidence').getPublicUrl(evName); 
+                    finalEvidenceUrl = evUrlData.publicUrl;
+                }
+
+                btn.innerHTML = "💾 บันทึกฐานข้อมูล...";
                 let totalCost = 0;
 
-                // 🌟 วนลูปตัดสต๊อก & คิดต้นทุน & บันทึก Log
                 for (let item of validCart) {
-                    // คำนวณต้นทุนดึงจาก globalInventory แบบ Real-time
                     let invItem = globalInventory.find(inv => inv.sku === item.sku);
                     let costPrice = invItem ? (invItem.cost_price || 0) : 0;
                     totalCost += (costPrice * item.weight);
@@ -442,7 +476,10 @@
                     await _supabase.from('ztech_inventory').update({ stock_weight: item.stock - item.weight }).eq('strain_name', item.name);
                     
                     let logActionLabel = orderType === 'GIVEAWAY' ? `POS: ${customer} (GIVEAWAY) [${staffName}]` : `POS: ${customer} [${staffName}]`;
-                    await _supabase.from('ztech_logs').insert([{ sku: item.sku || 'N/A', action_type: 'OUT', weight_change: item.weight, performed_by: logActionLabel }]);
+                    await _supabase.from('ztech_logs').insert([{ 
+                        sku: item.sku || 'N/A', action_type: 'OUT', weight_change: item.weight, performed_by: logActionLabel,
+                        evidence_url: finalEvidenceUrl 
+                    }]);
                 }
 
                 let totalW = validCart.reduce((sum, item) => sum + item.weight, 0); let subtotalP = 0;
@@ -451,13 +488,11 @@
                     subtotalP += (activePrice * item.weight);
                 });
                 
-                // ถ้างบรับรอง ยอดขายสุทธิ (finalP) จะกลายเป็น 0 ส่วนลดเป็น 0
                 let finalP = Math.max(0, subtotalP - specialDiscount);
                 if (orderType === 'GIVEAWAY') {
                     finalP = 0;
                 }
 
-                // 🌟 บันทึกลงฐานข้อมูล ztech_orders โครงสร้างใหม่
                 await _supabase.from('ztech_orders').insert([{ 
                     cart_items: validCart, 
                     total_weight: totalW, 
@@ -466,20 +501,24 @@
                     discount_amount: orderType === 'GIVEAWAY' ? 0 : specialDiscount, 
                     net_price: finalP, 
                     status: 'ACTIVE',
-                    order_type: orderType,   // ระบุว่าเป็น SALE หรือ GIVEAWAY
-                    total_cost: totalCost    // ยัดต้นทุนเข้าไป
+                    order_type: orderType,   
+                    total_cost: totalCost,
+                    evidence_url: finalEvidenceUrl // 🌟 ฝังลิงก์หลักฐานลงไปในบิล
                 }]);
                 
-                // ส่งใบเสร็จเข้า LINE
-                await sendLineSlip(customer, customerId, validCart, totalW, subtotalP, finalP, specialDiscount, staffName, orderType, totalCost);
+                // ส่งใบเสร็จพร้อมรูปภาพหลักฐานเข้า LINE
+                await sendLineSlip(customer, customerId, validCart, totalW, subtotalP, finalP, specialDiscount, staffName, orderType, totalCost, finalEvidenceUrl);
 
                 if (orderType === 'GIVEAWAY') {
-                    alert(`🎁 ทำรายการแจกฟรีให้ [${customer}] สำเร็จ!\\n(ระบบบันทึกต้นทุน -฿${totalCost.toLocaleString()} เป็นค่าใช้จ่ายเรียบร้อย)`);
+                    alert(`🎁 ทำรายการแจกฟรีให้ [${customer}] สำเร็จ!\\n(ระบบบันทึกต้นทุน -฿${totalCost.toLocaleString()} เรียบร้อย)`);
                 } else {
                     alert(`✅ ปิดการขายให้ [${customer}] สำเร็จ โดย ${staffName}`);
                 }
                 
-                cart = []; specialDiscount = 0; document.getElementById('customer-name').value = ''; document.getElementById('customer-id').value = '';
+                cart = []; specialDiscount = 0; 
+                document.getElementById('customer-name').value = ''; 
+                document.getElementById('customer-id').value = '';
+                document.getElementById('order-evidence').value = ''; // เคลียร์ช่องหลักฐาน
                 renderCart(); loadImperialVault(); 
             } catch (error) { 
                 alert("❌ ขัดข้อง: " + error.message); 
