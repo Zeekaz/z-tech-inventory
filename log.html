@@ -25,6 +25,7 @@
         .tab-btn { transition: all 0.3s ease; border-bottom: 2px solid transparent; }
         .tab-btn.active { border-color: #d4af37; color: #d4af37; background: rgba(212, 175, 55, 0.1); }
         .profit-glow { text-shadow: 0 0 10px rgba(57, 255, 20, 0.5); }
+        .giveaway-glow { text-shadow: 0 0 10px rgba(139, 0, 0, 0.8); }
         .glass-panel { background: rgba(15, 15, 15, 0.9); border: 1px solid #333; }
         #login-overlay { backdrop-filter: blur(10px); }
     </style>
@@ -67,7 +68,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 shrink-0">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-4 shrink-0">
         <div class="bg-gray-900 border-t-2 border-t-white p-3 md:p-4 rounded-lg shadow-lg">
             <h3 class="text-gray-400 text-[10px] md:text-xs font-bold tracking-wider mb-1">ยอดขายสุทธิ</h3>
             <p id="sum-revenue" class="text-lg md:text-2xl font-bold text-white">฿0</p>
@@ -75,6 +76,10 @@
         <div id="profit-card" class="bg-gray-900 border-t-2 border-t-neonGreen p-3 md:p-4 rounded-lg shadow-[0_0_15px_rgba(57,255,20,0.1)]">
             <h3 class="text-gray-400 text-[10px] md:text-xs font-bold tracking-wider mb-1">กำไรขั้นต้น</h3>
             <p id="sum-profit" class="text-lg md:text-2xl font-bold text-neonGreen profit-glow">฿0</p>
+        </div>
+        <div id="giveaway-card" class="bg-gray-900 border-t-2 border-t-bloodRed p-3 md:p-4 rounded-lg shadow-[0_0_15px_rgba(139,0,0,0.2)] hidden">
+            <h3 class="text-gray-400 text-[10px] md:text-xs font-bold tracking-wider mb-1">🎁 งบรับรอง (ต้นทุน)</h3>
+            <p id="sum-giveaway" class="text-lg md:text-2xl font-bold text-red-500 giveaway-glow">฿0</p>
         </div>
         <div class="bg-gray-900 border-t-2 border-t-goldDark p-3 md:p-4 rounded-lg shadow-lg">
             <h3 class="text-gray-400 text-[10px] md:text-xs font-bold tracking-wider mb-1">บิลสำเร็จ</h3>
@@ -111,7 +116,7 @@
                         <th class="p-3 border-b border-gothicPurple text-goldDark whitespace-nowrap">ลูกค้า</th>
                         <th class="p-3 border-b border-gothicPurple text-goldDark">รายการ</th>
                         <th class="p-3 border-b border-gothicPurple text-goldDark text-right">ยอดรับ</th>
-                        <th id="col-profit" class="p-3 border-b border-neonGreen text-neonGreen text-right">กำไร</th>
+                        <th id="col-profit" class="p-3 border-b border-neonGreen text-neonGreen text-right">กำไร / ต้นทุน</th>
                         <th id="col-action" class="p-3 border-b border-bloodRed text-bloodRed text-center">จัดการ</th>
                     </tr>
                 </thead>
@@ -158,7 +163,6 @@
         let rawOrdersData = []; 
         let userRole = ''; 
         
-        // 🌟 ตัวแปรเก็บข้อมูลคลินิก
         let clinicConfig = { isActive: false, doctorName: '', doctorLicense: '' };
 
         document.getElementById('pin-input').addEventListener('keypress', function (e) {
@@ -175,8 +179,10 @@
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('role-display').innerText = `Logged in as: ${user.name} (${user.role})`;
                 
-                if (userRole === 'CEO') {
+                if (userRole === 'CEO' || userRole === 'Manager') {
                     document.getElementById('role-display').className = "text-goldDark mt-1 text-xs md:text-sm font-bold";
+                    // 🌟 โชว์กล่องงบรับรองเฉพาะ CEO และ Manager
+                    document.getElementById('giveaway-card').classList.remove('hidden');
                 } else {
                     document.getElementById('role-display').className = "text-gray-400 mt-1 text-xs md:text-sm font-bold";
                     document.getElementById('profit-card').classList.add('hidden');
@@ -228,7 +234,6 @@
             return now.toISOString();
         }
 
-        // 🌟 โหลดข้อมูลคลินิกและข้อมูลบัญชี
         async function initDashboard() {
             try {
                 const { data: clinicData } = await _supabase.from('ztech_settings').select('*').eq('id', 1).single();
@@ -261,7 +266,7 @@
 
             rawOrdersData = data || []; 
 
-            let sumRev = 0, sumProf = 0, successBillsCount = 0;
+            let sumRev = 0, sumProf = 0, sumGiveawayCost = 0, successBillsCount = 0;
             let itemAggregator = {}; 
 
             if (data && data.length > 0) {
@@ -271,17 +276,17 @@
                     let date = new Date(order.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
                     let netPrice = order.net_price || 0;
                     let isVoided = order.status === 'CANCELLED' || order.status === 'VOID';
+                    let isGiveaway = order.order_type === 'GIVEAWAY'; // 🌟 เช็กว่าเป็นบิลแจกฟรีไหม
                     
-                    let totalOrderCost = 0;
+                    let totalOrderCost = order.total_cost || 0; // ดึงทุนที่บันทึกไว้ใน DB เลย
                     let itemsHTML = '';
                     
                     if(order.cart_items) {
                         order.cart_items.forEach(item => {
-                            let itemCost = costMap[item.name] || 0; 
-                            totalOrderCost += (itemCost * item.weight); 
                             itemsHTML += `<span class="bg-gray-800 text-[10px] px-1.5 py-0.5 rounded mr-1 mb-1 inline-block border border-gray-700 whitespace-nowrap">${item.name} <span class="text-gray-400">(${item.weight}g)</span></span>`;
                             
-                            if(!isVoided) {
+                            // 🌟 ไม่เอาของแจกฟรีไปคิดรวมในสินค้าขายดี
+                            if(!isVoided && !isGiveaway) {
                                 if(!itemAggregator[item.name]) itemAggregator[item.name] = 0;
                                 itemAggregator[item.name] += item.weight;
                             }
@@ -292,23 +297,37 @@
                     let rowClass = "hover:bg-gray-900 border-b border-gray-800 transition-colors";
                     let actionBtn = `<button onclick="voidBill('${order.id}', '${encodeURIComponent(JSON.stringify(order.cart_items))}')" class="text-red-500 hover:text-red-400 font-bold bg-gray-900 px-2 py-1 rounded border border-gray-700 text-xs">❌ Void</button>`;
                     let profitColor = orderProfit >= 0 ? 'text-neonGreen' : 'text-yellow-500';
+                    let profitText = `฿${orderProfit.toLocaleString()}`;
+                    
+                    // 🌟 ตกแต่ง UI สำหรับบิลงบรับรอง
+                    let tagUI = '';
+                    if(isGiveaway && !isVoided) {
+                        tagUI = `<span class="bg-[#8b0000] text-[#d4af37] text-[10px] px-1.5 py-0.5 rounded ml-2 border border-[#b5952f] shadow-[0_0_5px_rgba(139,0,0,0.5)]">🎁 งบรับรอง</span>`;
+                        profitText = `-฿${totalOrderCost.toLocaleString()}`; // โชว์เป็นต้นทุนติดลบแทนกำไร
+                        profitColor = 'text-red-500 font-bold';
+                        sumGiveawayCost += totalOrderCost; // บวกรวมยอด Marketing Expense
+                    }
 
                     if(isVoided) {
                         rowClass = "bg-red-950 border-b border-red-900 opacity-70";
                         actionBtn = `<span class="text-red-400 text-[10px] md:text-xs font-bold border border-red-500 px-1 rounded">ยกเลิกแล้ว</span>`;
                         profitColor = "text-gray-500 line-through";
+                        profitText = "฿0";
                         netPrice = 0; orderProfit = 0; 
-                    } else {
-                        sumRev += netPrice; sumProf += orderProfit; successBillsCount++;
+                    } else if (!isGiveaway) {
+                        sumRev += netPrice; sumProf += orderProfit; successBillsCount++; // บวกรวมยอดขายปกติ
                     }
 
-                    let profitCellHTML = userRole === 'CEO' ? `<td class="p-3 text-right font-bold ${profitColor}">฿${orderProfit.toLocaleString()}</td>` : '';
-                    let actionCellHTML = userRole === 'CEO' ? `<td class="p-3 text-center">${actionBtn}</td>` : '';
+                    let profitCellHTML = (userRole === 'CEO' || userRole === 'Manager') ? `<td class="p-3 text-right font-bold ${profitColor}">${profitText}</td>` : '';
+                    let actionCellHTML = (userRole === 'CEO' || userRole === 'Manager') ? `<td class="p-3 text-center">${actionBtn}</td>` : '';
 
                     htmlRows += `
                     <tr class="${rowClass}">
                         <td class="p-3 text-gray-400 whitespace-nowrap">${date}</td>
-                        <td class="p-3 font-bold text-white whitespace-nowrap">${order.seller_name} ${order.customer_id ? `<span class="text-[9px] text-gray-500 border border-gray-700 px-1 rounded block mt-1">${order.customer_id}</span>` : ''}</td>
+                        <td class="p-3 font-bold text-white whitespace-nowrap">
+                            ${order.seller_name} ${tagUI}
+                            ${order.customer_id ? `<span class="text-[9px] text-gray-500 border border-gray-700 px-1 rounded block mt-1">${order.customer_id}</span>` : ''}
+                        </td>
                         <td class="p-3 min-w-[200px]">${itemsHTML}</td>
                         <td class="p-3 text-right font-bold ${isVoided ? 'text-gray-500 line-through' : 'text-goldDark'}">฿${(order.net_price||0).toLocaleString()}</td>
                         ${profitCellHTML}
@@ -326,6 +345,7 @@
 
             document.getElementById('sum-revenue').innerText = `฿${sumRev.toLocaleString()}`;
             document.getElementById('sum-profit').innerText = `฿${sumProf.toLocaleString()}`;
+            document.getElementById('sum-giveaway').innerText = `฿${sumGiveawayCost.toLocaleString()}`; // 🌟 อัปเดตตัวเลขในกล่องแดง
             document.getElementById('sum-orders').innerText = `${successBillsCount}`;
         }
 
@@ -375,12 +395,12 @@
         }
 
         async function voidBill(orderId, cartItemsEncoded) {
-            if(userRole !== 'CEO') return alert("❌ ไม่มีสิทธิ์ยกเลิกบิล! (เฉพาะ CEO)");
+            if(userRole !== 'CEO' && userRole !== 'Manager') return alert("❌ ไม่มีสิทธิ์ยกเลิกบิล! (เฉพาะผู้บริหาร)");
             
-            let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (กรุณาใส่รหัส PIN):");
+            let pin = prompt("🔒 ยืนยันสิทธิ์ผู้บริหาร (กรุณาใส่รหัส PIN):");
             if(!pin) return;
             let user = SYSTEM_PINS[pin];
-            if(!user || user.role !== 'CEO') return alert("❌ รหัสผิด หรือไม่มีสิทธิ์!");
+            if(!user || (user.role !== 'CEO' && user.role !== 'Manager')) return alert("❌ รหัสผิด หรือไม่มีสิทธิ์!");
 
             if(!confirm("⚠️ แน่ใจหรือไม่ว่าจะยกเลิกบิลนี้? ระบบจะดึงสต๊อกกลับเข้าคลัง")) return;
 
@@ -404,8 +424,8 @@
             if(rawOrdersData.length === 0) return alert("ไม่มีข้อมูล");
             
             let csvContent = "\uFEFF"; 
-            if(userRole === 'CEO') {
-                csvContent += "Date,Customer,Customer ID,Total Weight (g),Discount,Net Price,Profit,Status,Items\n";
+            if(userRole === 'CEO' || userRole === 'Manager') {
+                csvContent += "Date,Customer,Customer ID,Type,Total Weight (g),Discount,Net Price,Profit/Cost,Status,Items\n";
             } else {
                 csvContent += "Date,Customer,Customer ID,Total Weight (g),Discount,Net Price,Status,Items\n";
             }
@@ -414,16 +434,16 @@
                 let dateStr = new Date(row.created_at).toLocaleString('th-TH');
                 let itemsStr = row.cart_items ? row.cart_items.map(i => `${i.name}(${i.weight}g)`).join(' | ') : '';
                 let statusStr = row.status || 'ACTIVE';
+                let typeStr = row.order_type === 'GIVEAWAY' ? 'GIVEAWAY' : 'SALE';
                 
-                let cost = 0;
-                if(row.cart_items && userRole === 'CEO') {
-                    row.cart_items.forEach(i => cost += (costMap[i.name] || 0) * i.weight);
-                }
+                let cost = row.total_cost || 0;
                 let profit = (row.net_price || 0) - cost;
                 
                 let rowArray = [];
-                if(userRole === 'CEO') {
-                    rowArray = [`"${dateStr}"`, `"${row.seller_name || ''}"`, `"${row.customer_id || ''}"`, row.total_weight || 0, row.discount_amount || 0, row.net_price || 0, profit, statusStr, `"${itemsStr}"`];
+                if(userRole === 'CEO' || userRole === 'Manager') {
+                    // ถ้าเป็น Giveaway ให้แสดงต้นทุน (ติดลบ) แทนกำไร
+                    let profitCostValue = typeStr === 'GIVEAWAY' ? -cost : profit;
+                    rowArray = [`"${dateStr}"`, `"${row.seller_name || ''}"`, `"${row.customer_id || ''}"`, typeStr, row.total_weight || 0, row.discount_amount || 0, row.net_price || 0, profitCostValue, statusStr, `"${itemsStr}"`];
                 } else {
                     rowArray = [`"${dateStr}"`, `"${row.seller_name || ''}"`, `"${row.customer_id || ''}"`, row.total_weight || 0, row.discount_amount || 0, row.net_price || 0, statusStr, `"${itemsStr}"`];
                 }
@@ -440,17 +460,18 @@
             document.body.removeChild(link);
         }
 
-        // 🌟 ฟังก์ชันใหม่: ส่งออกฟอร์ม ภ.ท.28
+        // 🌟 ภ.ท.28 ของเดิม ไม่แก้ไขอะไร
         function exportPhorThor28() {
             if(rawOrdersData.length === 0) return alert("ไม่มีข้อมูลสำหรับการออกรายงาน ภ.ท.28");
             
-            let csvContent = "\uFEFF"; // ป้องกันภาษาไทยเพี้ยนใน Excel
+            let csvContent = "\uFEFF"; 
             csvContent += "ลำดับ,วันที่รับบริการ,ชื่อ-สกุล ผู้ป่วย,เลขบัตรประชาชน/พาสปอร์ต,โรค/อาการที่สั่งจ่าย,ชื่อกัญชา/ตำรับกัญชา,จำนวนที่จ่าย (กรัม),ชื่อผู้สั่งจ่าย,เลขที่ใบประกอบวิชาชีพ\n";
 
             let rowIndex = 1;
             rawOrdersData.forEach(row => {
-                // ข้ามบิลที่ถูกยกเลิก ไม่ต้องส่งรายงานรัฐ
                 if (row.status === 'CANCELLED' || row.status === 'VOID') return; 
+                // 🌟 ข้ามบิลแจกฟรีด้วย ไม่ต้องส่งรัฐ
+                if (row.order_type === 'GIVEAWAY') return; 
                 
                 let dateStr = new Date(row.created_at).toLocaleDateString('th-TH');
                 let customer = row.seller_name || '-';
@@ -460,7 +481,6 @@
                 let itemsStr = row.cart_items ? row.cart_items.map(i => i.name).join(', ') : '-';
                 let totalWeight = row.total_weight || 0;
                 
-                // ดึงข้อมูลหมอมาใส่ (ถ้าเปิดโหมดคลินิกไว้)
                 let docName = clinicConfig.isActive ? clinicConfig.doctorName : '-';
                 let docLicense = clinicConfig.isActive ? clinicConfig.doctorLicense : '-';
 
@@ -499,6 +519,7 @@
                 let revStr = document.getElementById('sum-revenue').innerText;
                 let profStr = document.getElementById('sum-profit').innerText;
                 let orderStr = document.getElementById('sum-orders').innerText;
+                let giveawayStr = document.getElementById('sum-giveaway').innerText; // 🌟 ดึงยอดแจกฟรีมาด้วย
                 
                 let voidCount = rawOrdersData.filter(r => r.status === 'CANCELLED' || r.status === 'VOID').length;
                 let discountGiven = rawOrdersData.reduce((sum, order) => sum + (order.discount_amount || 0), 0);
@@ -510,7 +531,8 @@
                     if (discountGiven > 500) aiAlerts += `- มีการหักส่วนลดรวม ฿${discountGiven.toLocaleString()}`;
                 }
 
-                let msgText = `🌑 Z-TECH EXECUTIVE REPORT 🌑\nประจำช่วงเวลา: ${document.getElementById('btn-'+currentFilter).innerText}\n━━━━━━━━━━━━━━\n💰 ยอดขายสุทธิ: ${revStr}\n📈 กำไรขั้นต้น: ${profStr}\n🧾 จำนวนบิลสำเร็จ: ${orderStr}\n━━━━━━━━━━━━━━\n👁️‍🗨️ SYSTEM ANALYSIS:\n${aiAlerts}`;
+                // 🌟 เพิ่มบรรทัดงบรับรองในรายงาน AI
+                let msgText = `🌑 Z-TECH EXECUTIVE REPORT 🌑\nประจำช่วงเวลา: ${document.getElementById('btn-'+currentFilter).innerText}\n━━━━━━━━━━━━━━\n💰 ยอดขายสุทธิ: ${revStr}\n📈 กำไรขั้นต้น: ${profStr}\n🧾 จำนวนบิลสำเร็จ: ${orderStr}\n🎁 งบรับรอง (ต้นทุน): ${giveawayStr}\n━━━━━━━━━━━━━━\n👁️‍🗨️ SYSTEM ANALYSIS:\n${aiAlerts}`;
 
                 const token = '2mqUKe/Rb3dM/vKhOPvuXB8ag0eCS7t8ITrg5+NRiTWKXhgeA/aypMOZc5aDDvpufwkkeioOULxPu7/57MGs7Y1HGGfMW7xZd9vQD0lyY5DID8X9dfYv6AYHm3q1vqLDHzsrPO51asEQDb7stjyMSgdB04t89/1O/w1cDnyilFU=';
                 const userId = 'Cbf93761b1ac023b9fbe28afa7efbfb16'; 

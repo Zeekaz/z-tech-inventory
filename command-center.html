@@ -14,8 +14,9 @@
             background-color: #050505; /* ดำลึกสุดยอด */
             color: #e0e0e0;
             font-family: 'Courier New', Courier, monospace;
-            overflow: hidden; /* ซ่อนแถบเลื่อนให้ดูเป็นระบบปิด */
+            overflow-x: hidden; /* ป้องกันการเลื่อนซ้ายขวา */
         }
+        
         /* แถบหัวเรื่องด้านบน */
         .header {
             height: 55px;
@@ -26,91 +27,162 @@
             align-items: center;
             padding: 0 25px;
             box-shadow: 0 4px 15px rgba(0, 255, 102, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
+        
         /* ชื่อร้านเถ้าแก่ */
         .shop-title {
-            font-size: 26px;
+            font-size: 18px;
             font-weight: bold;
-            color: #00ff66; /* เขียวนีออนสายเขียว */
-            text-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+            color: #39ff14; /* เขียวนีออนสว่าง */
+            text-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
             letter-spacing: 2px;
         }
-        /* ลายเซ็น Z Tech เนียนๆ */
+        
+        /* ลายเซ็นของบอส */
         .z-tech-watermark {
             font-size: 11px;
-            color: #444; /* สีเทาเข้ม กลืนไปกับพื้นหลังแต่ยังมองเห็น */
+            color: #d4af37; /* สีทองหม่น */
             letter-spacing: 3px;
-            transition: color 0.3s ease;
+            text-transform: uppercase;
         }
-        .z-tech-watermark:hover {
-            color: #00ff66; /* เรืองแสงเมื่อเมาส์ชี้ (Gimmick เล็กๆ) */
-        }
-        /* พื้นที่แสดงผลหลัก */
+
+        /* โครงสร้างหลัก (Responsive Grid) */
         .container {
             display: flex;
-            width: 100%;
-            height: calc(100% - 55px);
+            flex-direction: column; /* ค่าเริ่มต้นสำหรับมือถือ (เรียงบนลงล่าง) */
+            height: calc(100vh - 55px);
         }
-        /* ฝั่งซ้าย 60% Dashboard */
+
+        /* ส่วนแสดงผลข้อมูล Z-Tech (ซ้ายในจอใหญ่, บนในมือถือ) */
         .dashboard-section {
-            width: 60%;
-            height: 100%;
-            border-right: 1px solid #1a4d2e;
-            background-color: #000;
+            flex: 1; /* ให้ Dashboard กินพื้นที่หลัก */
+            width: 100%;
+            height: 100%; /* สำหรับจอใหญ่ */
+            min-height: 60vh; /* สำหรับมือถือ ให้พอมีพื้นที่เลื่อน */
+            border-bottom: 2px solid #1a4d2e; /* เส้นแบ่งในมือถือ */
         }
-        iframe {
+        
+        /* สไตล์ของหน้าเว็บที่ฝังมา */
+        .dashboard-section iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
-        /* ฝั่งขวา 40% กล้องวงจรปิด */
+
+        /* ส่วนกล้องวงจรปิด (ขวาในจอใหญ่, ล่างในมือถือ) */
         .camera-section {
-            width: 40%;
-            height: 100%;
+            width: 100%;
             display: flex;
             flex-direction: column;
-            background-color: #080808;
+            background-color: #000;
             padding: 10px;
             box-sizing: border-box;
-            gap: 10px;
+            gap: 10px; /* ระยะห่างระหว่างกล้อง */
+            overflow-y: auto; /* ให้เลื่อนดูกล้องได้ถ้าจอมันเล็ก */
         }
-        /* กล่องจำลองสำหรับใส่กล้อง IP Cam */
-        .cam-placeholder {
-            flex: 1;
+
+        /* กรอบกล้องแต่ละตัว */
+        .cam-frame {
+            width: 100%;
+            /* อัตราส่วน 16:9 สำหรับกล้องมาตรฐาน */
+            aspect-ratio: 16 / 9;
+            background-color: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            position: relative;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background-color: #0c0c0c;
-            border: 1px dashed #222;
-            border-radius: 5px;
-            color: #555;
-            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,1);
         }
-        .cam-placeholder h3 {
-            margin: 0 0 10px 0;
-            font-size: 14px;
-            color: #888;
-            letter-spacing: 1px;
+        
+        /* แถบข้อมูลบนกล้อง */
+        .cam-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            z-index: 10;
+            text-shadow: 1px 1px 2px black;
+            display: flex;
+            align-items: center;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 6px;
+            border-radius: 3px;
         }
-        /* เอฟเฟกต์จุดสีแดงกะพริบ บ่งบอกว่ากำลังบันทึกภาพ (จิตวิทยาความน่าเชื่อถือ) */
+        
+        /* จุดไฟกระพริบอัดวิดีโอ */
         .rec-dot {
-            height: 8px;
             width: 8px;
+            height: 8px;
             background-color: #ff003c;
             border-radius: 50%;
             display: inline-block;
             margin-right: 8px;
             animation: pulse 1.5s infinite;
         }
+        
         @keyframes pulse {
             0% { opacity: 1; box-shadow: 0 0 5px #ff003c; }
             50% { opacity: 0.2; box-shadow: none; }
             100% { opacity: 1; box-shadow: 0 0 5px #ff003c; }
         }
+        
+        /* ข้อความรอสัญญาณ */
         .cam-hint {
             font-size: 12px;
-            color: #333;
+            color: #444;
+            text-align: center;
+            z-index: 5;
+        }
+
+        /* iframe สำหรับใส่สตรีมกล้องจริง */
+        .cam-stream {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            z-index: 1; /* ให้อยู่ใต้ป้ายชื่อกล้อง */
+        }
+
+        /* =========================================
+           Media Queries สำหรับหน้าจอขนาดใหญ่ (PC / TV)
+           ========================================= */
+        @media (min-width: 992px) {
+            .container {
+                flex-direction: row; /* เปลี่ยนเป็นเรียงซ้ายขวา */
+            }
+            
+            .dashboard-section {
+                width: 65%; /* ให้ Dashboard กว้าง 65% */
+                border-bottom: none;
+                border-right: 2px solid #1a4d2e;
+            }
+            
+            .camera-section {
+                width: 35%; /* ให้กล้องกว้าง 35% */
+                padding: 15px;
+                gap: 15px;
+            }
+        }
+        
+        /* สำหรับหน้าจอโคตรกว้าง (จอทีวีแนวยาว) */
+        @media (min-width: 1400px) {
+            .dashboard-section {
+                width: 70%;
+            }
+            .camera-section {
+                width: 30%;
+            }
         }
     </style>
 </head>
@@ -126,16 +198,19 @@
         </div>
         
         <div class="camera-section">
-            <div class="cam-placeholder">
-                <h3><span class="rec-dot"></span>FARM CAM 01 : INDOOR GROW</h3>
-                <span class="cam-hint">[ Waiting for IP Cam RTSP Stream ]</span>
-                <span class="cam-hint" style="margin-top:5px; font-size:9px;">sys.integrate(cam_01.ip);</span>
+            
+            <div class="cam-frame">
+                <div class="cam-info"><span class="rec-dot"></span>CAM 01 : COUNTER</div>
+                
+                <span class="cam-hint">[ Waiting for IP Cam 01 Stream ]<br><br><span style="font-size:9px;">sys.integrate(cam_01.ip);</span></span>
             </div>
-            <div class="cam-placeholder">
-                <h3><span class="rec-dot"></span>FARM CAM 02 : DRYING ROOM</h3>
-                <span class="cam-hint">[ Waiting for IP Cam RTSP Stream ]</span>
-                <span class="cam-hint" style="margin-top:5px; font-size:9px;">sys.integrate(cam_02.ip);</span>
+
+            <div class="cam-frame">
+                <div class="cam-info"><span class="rec-dot"></span>CAM 02 : STORE</div>
+                
+                <span class="cam-hint">[ Waiting for IP Cam 02 Stream ]<br><br><span style="font-size:9px;">sys.integrate(cam_02.ip);</span></span>
             </div>
+
         </div>
     </div>
 </body>
