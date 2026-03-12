@@ -69,15 +69,6 @@
         .spinner { border: 4px solid rgba(255,255,255,0.1); width: 40px; height: 40px; border-radius: 50%; border-left-color: #39ff14; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 🌟 ระบบการพิมพ์บน Tablet (ซ่อนทุกอย่าง ยกเว้นตัว QR) */
-        @media print {
-            body * { visibility: hidden; }
-            #print-qr-container, #print-qr-container * { visibility: visible; }
-            #print-qr-container { position: absolute; left: 0; top: 0; width: 100%; text-align: center; }
-            .modal { display: none !important; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        }
-
         @media (max-width: 768px) {
             body { padding: 10px; }
             .container { padding: 15px; padding-top: 60px; }
@@ -93,8 +84,6 @@
         <div class="spinner"></div>
         <span id="loadingText">⏳ กำลังประมวลผล กรุณารอสักครู่...</span>
     </div>
-
-    <div id="print-qr-container" class="hidden"></div>
 
     <div class="container">
         
@@ -317,7 +306,7 @@
         let sortCol = 'last_updated';
         let sortAsc = false;
         let isManageMode = false; 
-        let isPriceAuditMode = false; 
+        let isPriceAuditMode = false; // 🌟 สถานะปุ่มสแกนราคา
 
         function toggleMenu() { document.getElementById('admin-menu').classList.toggle('show'); }
         window.onclick = function(event) { if (!event.target.closest('.control-panel')) { document.getElementById('admin-menu').classList.remove('show'); } }
@@ -335,11 +324,17 @@
             } else { alert("❌ ไม่มีสิทธิ์เข้าถึง!"); }
         }
 
+        // 🌟 ฟังก์ชันสลับโหมด Price Audit
         function togglePriceAudit() {
             isPriceAuditMode = !isPriceAuditMode;
             const btn = document.getElementById('btn-price-audit');
-            if (isPriceAuditMode) { btn.style.background = '#ff4444'; btn.innerHTML = '✅ เลิกกรองราคา'; } 
-            else { btn.style.background = '#8b0000'; btn.innerHTML = '🚨 สินค้าไม่มีราคา'; }
+            if (isPriceAuditMode) {
+                btn.style.background = '#ff4444';
+                btn.innerHTML = '✅ เลิกกรองราคา';
+            } else {
+                btn.style.background = '#8b0000';
+                btn.innerHTML = '🚨 สินค้าไม่มีราคา';
+            }
             filterTable();
         }
 
@@ -358,6 +353,7 @@
             });
         }
 
+        // 🌟 ฟังก์ชันยิง LINE แจ้งเตือนของเข้าคลัง (Webhook)
         async function sendInboundLineNotify(type, itemData, imageUrls) {
             const token = '2mqUKe/Rb3dM/vKhOPvuXB8ag0eCS7t8ITrg5+NRiTWKXhgeA/aypMOZc5aDDvpufwkkeioOULxPu7/57MGs7Y1HGGfMW7xZd9vQD0lyY5DID8X9dfYv6AYHm3q1vqLDHzsrPO51asEQDb7stjyMSgdB04t89/1O/w1cDnyilFU=';
             const userId = 'Cbf93761b1ac023b9fbe28afa7efbfb16'; 
@@ -372,12 +368,20 @@
             let messagesArray = [{ type: 'text', text: msgText }];
             if (imageUrls && imageUrls.length > 0) {
                 let lineImages = imageUrls.slice(0, 4); 
-                lineImages.forEach(url => { if(url && url !== 'null') messagesArray.push({ type: 'image', originalContentUrl: url, previewImageUrl: url }); });
+                lineImages.forEach(url => { 
+                    if(url && url !== 'null') messagesArray.push({ type: 'image', originalContentUrl: url, previewImageUrl: url }); 
+                });
             }
-            await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.line.me/v2/bot/message/push'), { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ to: userId, messages: messagesArray }) }).catch(e => console.warn(e));
+
+            await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.line.me/v2/bot/message/push'), { 
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ to: userId, messages: messagesArray }) 
+            }).catch(e => console.warn(e));
         }
 
-        function toggleGrade(catId, gradeId) { const cat = document.getElementById(catId).value; const gradeSelect = document.getElementById(gradeId); if (cat !== 'ดอก') { gradeSelect.value = '-'; gradeSelect.disabled = true; } else { gradeSelect.disabled = false; if(gradeSelect.value === '-') gradeSelect.value = 'Top'; } }
+        function toggleGrade(catId, gradeId) {
+            const cat = document.getElementById(catId).value; const gradeSelect = document.getElementById(gradeId);
+            if (cat !== 'ดอก') { gradeSelect.value = '-'; gradeSelect.disabled = true; } else { gradeSelect.disabled = false; if(gradeSelect.value === '-') gradeSelect.value = 'Top'; }
+        }
 
         async function loadInventory() {
             const { data, error } = await _supabase.from('ztech_inventory').select('*').order('last_updated', { ascending: false });
@@ -410,6 +414,7 @@
                 const matchSearch = item.strain_name.toLowerCase().includes(searchTerm) || (item.sku && item.sku.toLowerCase().includes(searchTerm)) || (item.farm_name || "").toLowerCase().includes(searchTerm);
                 const matchFarm = farmTerm === "" || item.farm_name === farmTerm;
                 const matchType = typeTerm === "" || (item.strain_type || '-') === typeTerm;
+                // 🌟 กรองสินค้าที่ยังไม่ได้ใส่ราคา (0 หรือ null)
                 const matchPrice = isPriceAuditMode ? (item.price_base <= 0 || item.price_base === null) : true;
 
                 return matchSearch && matchFarm && matchType && matchPrice;
@@ -496,6 +501,7 @@
                 await _supabase.from('ztech_inventory').insert([{ sku, strain_name, category, strain_type, grade, image_url: finalImageUrl, farm_name, cost_price, price_base, price_tier1, price_tier2, stock_weight }]);
                 if (stock_weight > 0) await _supabase.from('ztech_logs').insert([{ sku: sku, action_type: 'IN', weight_change: stock_weight, performed_by: `SYS: NEW ITEM [CEO Z]`, evidence_url: finalEvidenceUrl }]); 
                 
+                // 🌟 ยิง LINE Notify (เคส A)
                 let notifyImageUrls = uploadedUrls.length > 0 ? uploadedUrls : (finalImageUrl ? [finalImageUrl] : []);
                 if (stock_weight > 0) await sendInboundLineNotify('NEW', {name: strain_name, weight: stock_weight, cost: cost_price, staff: 'CEO Z'}, notifyImageUrls);
 
@@ -564,6 +570,7 @@
                 await _supabase.from('ztech_inventory').update({ stock_weight: newTotal }).eq('sku', targetStockSku);
                 await _supabase.from('ztech_logs').insert([{ sku: targetStockSku, action_type: 'IN', weight_change: addedWeight, performed_by: `SYS: RESTOCK [${restockRoleName}]`, evidence_url: finalEvidenceUrl }]); 
                 
+                // 🌟 ยิง LINE Notify (เคส B - ข้ามถ่ายรูปได้ ดึงรูปเก่าโชว์แทน)
                 let invItem = allProducts.find(p => p.sku === targetStockSku) || {};
                 let notifyImageUrls = uploadedUrls.length > 0 ? uploadedUrls : (invItem.image_url ? [invItem.image_url] : []);
                 await sendInboundLineNotify('RESTOCK', {name: targetStockStrain, weight: addedWeight, cost: invItem.cost_price || 0, staff: restockRoleName}, notifyImageUrls);
@@ -578,28 +585,9 @@
         async function requestImageDelete() { let pin = prompt("🔒 PIN ผู้บริหาร:"); if(!pin) return; let user = SYSTEM_PINS[pin]; if(user && user.role === 'CEO') { if(confirm("⚠️ ลบรูปภาพ?")) await deleteImage(); } else alert("❌ ไม่มีสิทธิ์!"); }
         async function processImageUpload(event) { const file = event.target.files[0]; if(!file) return; const loading = document.getElementById('loadingOverlay'); loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "📸 อัปโหลดรูป..."; try { let compImg = await compressImage(file); const fileName = `item_${Date.now()}.${compImg.name.split('.').pop()}`; await _supabase.storage.from('ztech_images').upload(fileName, compImg); const url = _supabase.storage.from('ztech_images').getPublicUrl(fileName).data.publicUrl; await _supabase.from('ztech_inventory').update({ image_url: url }).eq('sku', targetSkuForUpload); closeImageView(); loadInventory(); } catch(err) { alert("❌ ไม่สำเร็จ"); } finally { event.target.value = ''; loading.style.display = 'none'; } }
         async function deleteImage() { const loading = document.getElementById('loadingOverlay'); loading.style.display = 'flex'; try { await _supabase.from('ztech_inventory').update({ image_url: null }).eq('sku', targetSkuForUpload); closeImageView(); loadInventory(); } catch(err) { alert("❌ ไม่สำเร็จ"); } finally { loading.style.display = 'none'; } }
-        
-        // 🌟 ระบบสแกน QR Code 
         function openQR(sku, strain, grade) { document.getElementById('modalStrain').innerText = strain + (grade==='-'?'':` (${grade})`); document.getElementById('modalSku').innerText = sku; document.getElementById('modalQrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${sku}`; document.getElementById('qrModal').style.display = 'block'; }
         function closeQR() { document.getElementById('qrModal').style.display = 'none'; }
-        
-        // 🌟 อัปเกรดฟังก์ชัน Print ให้รองรับ Tablet (ดึงข้อมูลจาก modal ลง Container แล้วสั่งปริ้นท์)
-        function printQR() { 
-            let imgSrc = document.getElementById('modalQrImg').src; 
-            let title = document.getElementById('modalStrain').innerText; 
-            let sku = document.getElementById('modalSku').innerText; 
-            
-            let printDiv = document.getElementById('print-qr-container');
-            if (!printDiv) {
-                printDiv = document.createElement('div');
-                printDiv.id = 'print-qr-container';
-                document.body.appendChild(printDiv);
-            }
-            
-            printDiv.innerHTML = `<div style="text-align:center; font-family:sans-serif; margin-top:20px;"><h2 style="margin-bottom: 5px; font-size: 24px; color: black;">${title}</h2><p style="font-family:monospace; font-size:18px; margin-top:0; color: black;">${sku}</p><img src="${imgSrc}" style="width:200px; height:200px; border:2px solid #000; padding:10px; display:inline-block;"></div>`;
-            
-            setTimeout(() => { window.print(); }, 300);
-        }
+        function printQR() { let imgSrc = document.getElementById('modalQrImg').src; let title = document.getElementById('modalStrain').innerText; let sku = document.getElementById('modalSku').innerText; let win = window.open('', '', 'width=600,height=600'); win.document.write(`<html><body style="text-align:center; font-family:sans-serif; margin-top:50px;"><h2 style="margin-bottom: 5px;">${title}</h2><p style="font-family:monospace; font-size:18px; margin-top:0;">${sku}</p><img src="${imgSrc}" style="width:200px; height:200px; border:2px solid #000; padding:10px;"><script>setTimeout(() => { window.print(); window.close(); }, 500);<\/script></body></html>`); }
         
         async function openClinicConfig() { let pin = prompt("🔒 PIN ผู้บริหารสูงสุด:"); if(!pin) return; let user = SYSTEM_PINS[pin]; if(user && user.role === 'CEO') { const loading = document.getElementById('loadingOverlay'); loading.style.display = 'flex'; try { const { data } = await _supabase.from('ztech_settings').select('*').eq('id', 1).single(); if(data) { document.getElementById('c_clinic_mode').checked = data.clinic_mode; document.getElementById('c_doctor_name').value = data.doctor_name || ''; document.getElementById('c_doctor_license').value = data.doctor_license || ''; if(data.doctor_signature_url) { document.getElementById('sig_preview').src = data.doctor_signature_url; document.getElementById('sig_preview_container').style.display = 'block'; } } document.getElementById('clinicModal').style.display = 'block'; } catch(e) {} finally { loading.style.display = 'none'; } } else alert("❌ ไม่มีสิทธิ์!"); }
         function closeClinicConfig() { document.getElementById('clinicModal').style.display = 'none'; }
