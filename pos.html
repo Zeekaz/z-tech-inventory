@@ -11,9 +11,7 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        darkBg: '#050505', zPurple: '#4a0e4e', neonGreen: '#39ff14', goldDark: '#b5952f'
-                    },
+                    colors: { darkBg: '#050505', zPurple: '#4a0e4e', neonGreen: '#39ff14', goldDark: '#b5952f' },
                     fontFamily: { sans: ['Segoe UI', 'sans-serif'] }
                 }
             }
@@ -32,11 +30,36 @@
         #qr-reader__scan_region { background: #000; }
         #qr-reader__dashboard { background: #111; color: #fff; padding: 10px; }
         #qr-reader__dashboard_section_csr button { background: #4a0e4e; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+
+        /* 🌟 ระบบแสดงข้อความแจ้งเตือนแบบเนียนๆ (Toast) */
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 5px; padding: 10px; position: fixed; z-index: 50; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; border: 1px solid #d4af37; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
+        #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+
+        /* 🌟 สไตล์สำหรับการพิมพ์ใบเสร็จ (Thermal Printer 80mm) */
+        @media print {
+            body * { visibility: hidden; }
+            #receipt-container, #receipt-container * { visibility: visible; }
+            #receipt-container { position: absolute; left: 0; top: 0; width: 80mm; padding: 5mm; background: white; color: black; font-family: 'Courier New', Courier, monospace; font-size: 12px; }
+            .no-print { display: none !important; }
+            /* ปิดสีพื้นหลังตอนปริ้นท์ */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+
+        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; color: #39ff14; font-size: 18px; font-weight: bold; align-items: center; justify-content: center; flex-direction: column; }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); width: 40px; height: 40px; border-radius: 50%; border-left-color: #39ff14; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="flex flex-col md:flex-row md:h-screen md:overflow-hidden">
+<body class="flex flex-col md:flex-row md:h-screen md:overflow-hidden relative">
 
-    <div class="w-full md:w-[60%] lg:w-2/3 h-[50vh] md:h-full p-3 md:p-5 overflow-y-auto border-b md:border-b-0 md:border-r border-zPurple flex flex-col">
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <span id="loadingText">⏳ กำลังประมวลผล...</span>
+    </div>
+
+    <div id="toast">แจ้งเตือน</div>
+
+    <div class="w-full md:w-[60%] lg:w-2/3 h-[50vh] md:h-full p-3 md:p-5 overflow-y-auto border-b md:border-b-0 md:border-r border-zPurple flex flex-col no-print">
         <div class="flex justify-between items-center mb-3 border-b border-gray-800 pb-2 shrink-0">
             <h1 class="text-xl md:text-2xl font-bold text-goldDark tracking-widest uppercase flex items-center gap-2">
                 🌑 Z-Tech Inventory
@@ -81,7 +104,7 @@
         <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3 flex-grow overflow-y-auto content-start" id="product-grid"></div>
     </div>
 
-    <div class="w-full md:w-[40%] lg:w-1/3 h-auto md:h-full p-4 md:p-6 bg-black flex flex-col relative overflow-y-visible md:overflow-y-auto">
+    <div class="w-full md:w-[40%] lg:w-1/3 h-auto md:h-full p-4 md:p-6 bg-black flex flex-col relative overflow-y-visible md:overflow-y-auto no-print">
         <h2 class="text-lg md:text-xl text-neonGreen font-bold mb-3 text-center tracking-wider shrink-0">🛒 ORDER CART</h2>
         
         <div class="flex gap-2 mb-3 shrink-0">
@@ -98,12 +121,23 @@
             <input type="text" id="customer-id" placeholder="เลขบัตร ปชช. / เลขใบอนุญาต (ภ.ท.28)" class="w-full bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-xs">
         </div>
 
+        <div class="mb-3 shrink-0 bg-gray-900 p-2 rounded border border-gray-800">
+            <label class="flex items-center gap-2 text-gray-400 text-xs cursor-pointer font-bold mb-1">
+                <input type="checkbox" id="tax-invoice-toggle" class="accent-zPurple" onchange="toggleTaxFields()">
+                🧾 ขอใบกำกับภาษี (Tax Invoice)
+            </label>
+            <div id="tax-fields" class="hidden flex-col gap-2 mt-2">
+                <input type="text" id="tax-address" placeholder="ที่อยู่ลูกค้า/บริษัท" class="w-full bg-black border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-xs">
+                <input type="text" id="tax-id-number" placeholder="เลขประจำตัวผู้เสียภาษี (13 หลัก)" class="w-full bg-black border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-xs">
+            </div>
+        </div>
+
         <div class="mb-3 shrink-0 bg-[#0a0a0a] p-2 rounded border border-dashed border-[#b5952f]">
             <label class="text-[#d4af37] text-xs font-bold mb-1 flex items-center justify-between">
-                <span>📸 ถ่ายรูปหลักฐาน (สินค้า/แพ็กเกจ)</span>
-                <span class="text-red-500 text-[10px]">*บังคับ</span>
+                <span>📸 ถ่ายรูปหลักฐาน (ตราชั่ง/แพ็กเกจ)</span>
+                <span class="text-red-500 text-[10px]">*บังคับ (สูงสุด 5 รูป)</span>
             </label>
-            <input type="file" id="order-evidence" accept="image/*" capture="environment" class="w-full bg-black text-white text-[10px] border border-gray-800 p-1 rounded focus:outline-none focus:border-neonGreen">
+            <input type="file" id="order-evidence" accept="image/*" multiple capture="environment" class="w-full bg-black text-white text-[10px] border border-gray-800 p-1 rounded focus:outline-none focus:border-neonGreen">
         </div>
 
         <div class="flex-grow overflow-y-auto mb-3 border-b border-gray-800 pb-2" id="cart-items">
@@ -141,6 +175,46 @@
         </div>
     </div>
 
+    <div id="receipt-container" class="hidden">
+        <div style="text-align: center; margin-bottom: 10px;">
+            <h2 style="margin: 0; font-size: 16px; font-weight: bold;">Z-TECH GLOBAL</h2>
+            <p style="margin: 2px 0; font-size: 10px;">The Premium Hub</p>
+            <p id="receipt-type" style="margin: 5px 0; font-size: 12px; font-weight: bold; border-bottom: 1px dashed black; padding-bottom: 5px;">ใบเสร็จรับเงิน (RECEIPT)</p>
+        </div>
+        
+        <div style="font-size: 10px; margin-bottom: 10px;">
+            <p style="margin: 2px 0;">วันที่: <span id="r-date"></span></p>
+            <p style="margin: 2px 0;">ลูกค้า: <span id="r-customer"></span></p>
+            <div id="r-tax-section" style="display: none;">
+                <p style="margin: 2px 0;">ที่อยู่: <span id="r-address"></span></p>
+                <p style="margin: 2px 0;">เลขผู้เสียภาษี: <span id="r-taxid"></span></p>
+            </div>
+            <p style="margin: 2px 0;" id="r-doctor-section" style="display: none;">แพทย์สั่งจ่าย: <span id="r-doctor"></span></p>
+        </div>
+
+        <table style="width: 100%; font-size: 10px; border-collapse: collapse; margin-bottom: 10px;">
+            <thead>
+                <tr style="border-bottom: 1px dashed black; border-top: 1px dashed black;">
+                    <th style="text-align: left; padding: 4px 0;">รายการ</th>
+                    <th style="text-align: right; padding: 4px 0;">จำนวน</th>
+                    <th style="text-align: right; padding: 4px 0;">รวม</th>
+                </tr>
+            </thead>
+            <tbody id="r-items"></tbody>
+        </table>
+
+        <div style="font-size: 11px; text-align: right; border-bottom: 1px dashed black; padding-bottom: 10px; margin-bottom: 10px;">
+            <p style="margin: 2px 0;">รวมเงิน: <span id="r-subtotal"></span></p>
+            <p style="margin: 2px 0;">ส่วนลด: <span id="r-discount"></span></p>
+            <p style="margin: 5px 0; font-weight: bold; font-size: 14px;">ยอดสุทธิ: <span id="r-total"></span></p>
+        </div>
+        
+        <div style="text-align: center; font-size: 10px;">
+            <p style="margin: 2px 0;">ผู้รับเงิน: <span id="r-staff"></span></p>
+            <p style="margin: 10px 0;">*** ขอบคุณที่ใช้บริการ ***</p>
+        </div>
+    </div>
+
     <script>
         const supabaseUrl = 'https://zwpagcqoopvinufsgluc.supabase.co'; 
         const supabaseKey = 'sb_publishable_mirbWPp7tEPi5YiTFPnSSw_BZsKkfLa'; 
@@ -159,11 +233,42 @@
         let currentCategory = 'All'; 
         let html5QrcodeScanner = null;
 
-        let clinicConfig = {
-            isActive: false,
-            doctorName: '',
-            doctorLicense: ''
-        };
+        let clinicConfig = { isActive: false, doctorName: '', doctorLicense: '' };
+
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            toast.innerText = message;
+            toast.className = "show";
+            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 2000);
+        }
+
+        function toggleTaxFields() {
+            const isChecked = document.getElementById('tax-invoice-toggle').checked;
+            document.getElementById('tax-fields').style.display = isChecked ? 'flex' : 'none';
+        }
+
+        // 🌟 AI บีบอัดรูปภาพก่อนโยนขึ้น Cloud (ลอกมาจาก dashboard)
+        async function compressImage(file, maxWidth = 800, quality = 0.7) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = event => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width; let height = img.height;
+                        if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        canvas.toBlob(blob => { resolve(new File([blob], file.name, { type: 'image/jpeg' })); }, 'image/jpeg', quality);
+                    };
+                    img.onerror = error => reject(error);
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
 
         async function loadClinicSettings() {
             try {
@@ -172,19 +277,17 @@
                     clinicConfig.isActive = data.clinic_mode;
                     clinicConfig.doctorName = data.doctor_name || '';
                     clinicConfig.doctorLicense = data.doctor_license || '';
-                    
                     if(clinicConfig.isActive) {
                         document.getElementById('clinic-status-badge').style.display = 'inline-block';
                         document.getElementById('clinic-status-badge').title = `แพทย์: ${clinicConfig.doctorName} (${clinicConfig.doctorLicense})`;
                     }
                 }
-            } catch (err) { console.warn("⚠️ ไม่สามารถโหลดข้อมูลคลินิกได้:", err); }
+            } catch (err) {}
         }
 
         async function loadImperialVault() {
             const grid = document.getElementById('product-grid');
             grid.innerHTML = '<p class="text-zPurple animate-pulse col-span-3 lg:col-span-5 text-center tracking-widest text-sm">⏳ โหลดข้อมูล...</p>';
-
             try {
                 const { data, error } = await _supabase.from('ztech_inventory').select('*').order('last_updated', { ascending: false });
                 if (error) throw error;
@@ -197,11 +300,9 @@
                     let dateB = new Date(b.last_updated || 0).getTime();
                     return dateB - dateA;
                 });
-                
                 const farmSelect = document.getElementById('farm-filter');
                 const uniqueFarms = [...new Set(globalInventory.map(item => item.farm_name).filter(name => name))];
                 farmSelect.innerHTML = '<option value="">-- ทุกฟาร์ม --</option>' + uniqueFarms.map(farm => `<option value="${farm}">${farm}</option>`).join('');
-
                 buildCategoryTabs(); filterInventory(); 
             } catch (error) { grid.innerHTML = '<p class="text-red-500 col-span-3 lg:col-span-5 text-center text-sm">⚠️ ระบบขัดข้อง</p>'; }
         }
@@ -210,15 +311,8 @@
             const tabContainer = document.getElementById('category-tabs');
             const uniqueCats = [...new Set(globalInventory.map(item => item.category).filter(c => c))];
             tabContainer.innerHTML = `<button onclick="setCategory('All')" id="btn-cat-All" class="px-3 py-1 rounded-full text-xs font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors">ทั้งหมด</button>`;
-            
             uniqueCats.forEach(cat => {
-                let icon = '🏷️';
-                if(cat === 'ดอก') icon = '🌸';
-                else if(cat === 'ผง') icon = '🌫️';
-                else if(cat === 'ใต้เครื่อง') icon = '⚙️';
-                else if(cat === 'ใบทริม') icon = '🍃';
-                else if(cat === 'ไฟน้อลทริม') icon = '🍂';
-                
+                let icon = '🏷️'; if(cat === 'ดอก') icon = '🌸'; else if(cat === 'ผง') icon = '🌫️'; else if(cat === 'ใต้เครื่อง') icon = '⚙️'; else if(cat === 'ใบทริม') icon = '🍃'; else if(cat === 'ไฟน้อลทริม') icon = '🍂';
                 const btnHTML = `<button onclick="setCategory('${cat}')" id="btn-cat-${cat}" class="px-3 py-1 rounded-full text-xs font-bold bg-gray-900 text-gray-400 border border-gray-700 hover:text-white whitespace-nowrap transition-colors">${icon} ${cat}</button>`;
                 tabContainer.insertAdjacentHTML('beforeend', btnHTML);
             });
@@ -231,9 +325,7 @@
             const tabs = document.getElementById('category-tabs').children;
             for(let btn of tabs) {
                 let catId = btn.id.replace('btn-cat-', '');
-                btn.className = (catId === currentCategory) 
-                    ? "px-3 py-1 rounded-full text-xs font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors"
-                    : "px-3 py-1 rounded-full text-xs font-bold bg-gray-900 text-gray-400 border border-gray-700 hover:text-white whitespace-nowrap transition-colors";
+                btn.className = (catId === currentCategory) ? "px-3 py-1 rounded-full text-xs font-bold bg-zPurple text-white border border-purple-500 whitespace-nowrap transition-colors" : "px-3 py-1 rounded-full text-xs font-bold bg-gray-900 text-gray-400 border border-gray-700 hover:text-white whitespace-nowrap transition-colors";
             }
         }
 
@@ -254,13 +346,12 @@
                 return matchSearch && matchFarm && matchCategory && matchCatDropdown && matchGrade;
             });
 
-            if(filteredData.length === 0) {
-                grid.innerHTML = '<p class="text-gray-500 col-span-3 lg:col-span-5 text-center text-sm mt-4">ไม่พบสินค้า</p>'; return;
-            }
+            if(filteredData.length === 0) { grid.innerHTML = '<p class="text-gray-500 col-span-3 lg:col-span-5 text-center text-sm mt-4">ไม่พบสินค้า</p>'; return; }
 
             filteredData.forEach(item => {
                 let basePrice = item.price_base || 0; let tier1Price = item.price_tier1 || 0; let tier2Price = item.price_tier2 || 0;
-                let imgDisplay = item.image_url ? `<img src="${item.image_url}" class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">` : `<span class="text-gray-600 font-bold uppercase tracking-widest text-[10px]">${item.category || 'ITEM'}</span>`;
+                // 🌟 ใส่ loading="lazy" ให้รูปโหลดไวขึ้น
+                let imgDisplay = item.image_url ? `<img src="${item.image_url}" loading="lazy" class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">` : `<span class="text-gray-600 font-bold uppercase tracking-widest text-[10px]">${item.category || 'ITEM'}</span>`;
                 let gradeDisplay = item.grade && item.grade !== '-' ? `<div class="absolute top-1 right-1 bg-zPurple text-[9px] px-1.5 py-0.5 rounded text-white shadow-md border border-purple-500">${item.grade}</div>` : '';
                 let isOutOfStock = item.stock_weight <= 0;
                 let outOfStockClass = isOutOfStock ? "opacity-50 grayscale cursor-not-allowed" : "cursor-pointer purple-glow";
@@ -289,7 +380,7 @@
             skuScanned = skuScanned.trim().toUpperCase(); if (!skuScanned) return;
             let foundItem = globalInventory.find(item => item.sku && item.sku.toUpperCase() === skuScanned);
             if (foundItem) addToCart(foundItem.strain_name, foundItem.price_base || 0, foundItem.price_tier1 || 0, foundItem.price_tier2 || 0, Number(foundItem.stock_weight||0), foundItem.sku);
-            else alert('❌ ไม่พบสินค้ารหัส [' + skuScanned + ']');
+            else showToast('❌ ไม่พบสินค้ารหัส [' + skuScanned + ']');
             document.getElementById('scanner-input').value = '';
         }
 
@@ -297,20 +388,25 @@
 
         function toggleCamera() {
             const readerDiv = document.getElementById('qr-reader');
-            if (readerDiv.style.display === 'block') {
-                if(html5QrcodeScanner) { html5QrcodeScanner.clear(); html5QrcodeScanner = null; }
-                readerDiv.style.display = 'none';
-            } else {
-                readerDiv.style.display = 'block';
-                html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 200, height: 200} }, false);
-                html5QrcodeScanner.render((decodedText) => { toggleCamera(); processScanResult(decodedText); }, (error) => { });
-            }
+            if (readerDiv.style.display === 'block') { if(html5QrcodeScanner) { html5QrcodeScanner.clear(); html5QrcodeScanner = null; } readerDiv.style.display = 'none'; } 
+            else { readerDiv.style.display = 'block'; html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 200, height: 200} }, false); html5QrcodeScanner.render((decodedText) => { toggleCamera(); processScanResult(decodedText); }, (error) => { }); }
         }
 
         function addToCart(name, base, t1, t2, stock, sku) {
-            if (stock <= 0) return alert(`⚠️ สินค้าหมด: [${name}] ไม่มีสินค้าในคลังค่ะ`);
-            if (cart.find(item => item.name === name)) return alert(`⚠️ มี [${name}] ในตะกร้าแล้วค่ะ`);
-            cart.push({ name, base, t1, t2, stock, sku, weight: 0 }); renderCart();
+            if (stock <= 0) return showToast(`⚠️ สินค้าหมด: [${name}] ไม่มีสินค้าในคลังค่ะ`);
+            
+            // 🌟 เช็กซ้ำด้วย Toast และโฟกัสช่องน้ำหนักอัตโนมัติ (UX)
+            let existingIndex = cart.findIndex(item => item.name === name);
+            if (existingIndex !== -1) {
+                showToast(`ℹ️ มี [${name}] ในตะกร้าแล้วค่ะ`);
+                document.getElementById(`weight-input-${existingIndex}`).focus();
+                return;
+            }
+            
+            cart.push({ name, base, t1, t2, stock, sku, weight: 0 }); 
+            renderCart();
+            // โฟกัสช่องที่เพิ่งเพิ่มล่าสุดทันที
+            setTimeout(() => { document.getElementById(`weight-input-${cart.length-1}`).focus(); }, 100);
         }
 
         function renderCart() {
@@ -319,13 +415,13 @@
             cartDiv.innerHTML = '';
             cart.forEach((item, index) => {
                 const itemHTML = `
-                <div class="bg-gray-900 p-2 rounded mb-2 border border-gray-800">
+                <div class="bg-gray-900 p-2 rounded mb-2 border border-gray-800 transition-all duration-300" id="cart-row-${index}">
                     <div class="flex justify-between items-center mb-1">
                         <span class="font-bold text-white text-xs truncate w-3/4">${item.name} <span class="text-[9px] text-gray-500">(${item.stock}g)</span></span>
                         <button class="text-red-500 text-xs" onclick="removeFromCart(${index})">✖</button>
                     </div>
                     <div class="flex gap-1">
-                        <input type="number" step="any" placeholder="กรัม" class="w-1/2 bg-black border border-gray-700 text-white p-1 rounded text-center text-xs focus:border-neonGreen outline-none" value="${item.weight || ''}" oninput="updateWeightFast(${index}, this.value)" max="${item.stock}">
+                        <input type="number" id="weight-input-${index}" step="any" placeholder="กรัม" class="w-1/2 bg-black border border-gray-700 text-white p-1 rounded text-center text-xs focus:border-neonGreen outline-none transition-colors" value="${item.weight || ''}" oninput="updateWeightFast(${index}, this.value)" max="${item.stock}">
                         <div class="w-1/2 bg-black flex flex-col justify-center items-center rounded border border-gray-700 py-1">
                             <span id="price-display-${index}" class="text-white font-bold text-xs">฿${item.base}</span>
                         </div>
@@ -338,8 +434,19 @@
 
         function updateWeightFast(index, value) {
             let w = parseFloat(value); if (isNaN(w) || w < 0) w = 0;
-            if (w > cart[index].stock) { alert(`⚠️ สินค้าไม่พอ!`); cart[index].weight = cart[index].stock; renderCart(); return; }
-            cart[index].weight = w; calculateTotals(); 
+            let inputField = document.getElementById(`weight-input-${index}`);
+            let rowBox = document.getElementById(`cart-row-${index}`);
+            
+            if (w > cart[index].stock) { 
+                showToast(`⚠️ สินค้าไม่พอ! (มีแค่ ${cart[index].stock}g)`); 
+                cart[index].weight = cart[index].stock; 
+                inputField.value = cart[index].stock;
+                rowBox.classList.add('border-red-500'); setTimeout(()=>rowBox.classList.remove('border-red-500'), 500);
+            } else {
+                cart[index].weight = w; 
+                rowBox.classList.add('border-neonGreen'); setTimeout(()=>rowBox.classList.remove('border-neonGreen'), 500);
+            }
+            calculateTotals(); 
         }
 
         function removeFromCart(index) { cart.splice(index, 1); renderCart(); }
@@ -374,98 +481,128 @@
             document.getElementById('total-price').className = `${activeColor} text-xl`;
         }
 
-        // 🌟 อัปเกรดให้ยิงรูปภาพไปพร้อมกับข้อความใน LINE
-        async function sendLineSlip(customer, customerId, cartItems, totalW, subtotalP, finalP, discount, staffName, orderType, totalCost, evidenceUrl) {
+        // 🌟 อัปเกรดให้ยิงรูปภาพไปพร้อมกับข้อความใน LINE (ยิงเป็นชุด)
+        async function sendLineSlip(customer, customerId, cartItems, totalW, subtotalP, finalP, discount, staffName, orderType, totalCost, evidenceUrlsStr) {
             const token = '2mqUKe/Rb3dM/vKhOPvuXB8ag0eCS7t8ITrg5+NRiTWKXhgeA/aypMOZc5aDDvpufwkkeioOULxPu7/57MGs7Y1HGGfMW7xZd9vQD0lyY5DID8X9dfYv6AYHm3q1vqLDHzsrPO51asEQDb7stjyMSgdB04t89/1O/w1cDnyilFU=';
             const userId = 'Cbf93761b1ac023b9fbe28afa7efbfb16'; 
             let itemList = cartItems.map(item => `▪️ ${item.name}: ${item.weight}g`).join('\n');
-            
             let msgText = '';
 
             if(orderType === 'GIVEAWAY') {
-                msgText = `🎁 Z-Tech: งบรับรอง (Giveaway) 🎁\n━━━━━━━━━━━━━━\n👤 ผู้รับ (แจกฟรี): ${customer}\n`;
-                if (customerId) msgText += `🪪 ข้อมูลอ้างอิง: ${customerId}\n`;
-                if (clinicConfig.isActive && clinicConfig.doctorName) {
-                    msgText += `🏥 แพทย์ประทับรับรอง: ${clinicConfig.doctorName}\n`;
-                }
-                msgText += `⚖️ น้ำหนักรวม: ${totalW} g\n📉 มูลค่าต้นทุนบริษัท: ฿${totalCost.toLocaleString()}\n💸 ยอดขายสุทธิ: ฿0 (Giveaway)\n👨‍💼 ผู้อนุมัติ: ${staffName}\n━━━━━━━━━━━━━━\n📦 รายการแจกฟรี:\n${itemList}`;
+                msgText = `🎁 Z-Tech: งบรับรอง (Giveaway) 🎁\n━━━━━━━━━━━━━━\n👤 ผู้รับ: ${customer}\n`;
+                if (customerId) msgText += `🪪 ข้อมูล: ${customerId}\n`;
+                if (clinicConfig.isActive && clinicConfig.doctorName) msgText += `🏥 แพทย์รับรอง: ${clinicConfig.doctorName}\n`;
+                msgText += `⚖️ น้ำหนักรวม: ${totalW} g\n📉 ทุนบริษัท: ฿${totalCost.toLocaleString()}\n👨‍💼 ผู้อนุมัติ: ${staffName}\n━━━━━━━━━━━━━━\n📦 รายการ:\n${itemList}`;
             } else {
                 msgText = `🌑 Z-Tech Management 🌑\n\n✅ ยืนยันคำสั่งซื้อ\n━━━━━━━━━━━━━━\n👤 ลูกค้า: ${customer}\n`;
-                if (customerId) msgText += `🪪 รหัส/ใบอนุญาต: ${customerId}\n`;
-                if (clinicConfig.isActive && clinicConfig.doctorName) {
-                    msgText += `🏥 แพทย์ผู้สั่งจ่าย: ${clinicConfig.doctorName}\n`;
-                    if (clinicConfig.doctorLicense) msgText += `📋 ใบประกอบวิชาชีพ: ${clinicConfig.doctorLicense}\n`;
-                }
+                if (customerId) msgText += `🪪 รหัส/อนุญาต: ${customerId}\n`;
+                if (clinicConfig.isActive && clinicConfig.doctorName) msgText += `🏥 แพทย์ผู้สั่งจ่าย: ${clinicConfig.doctorName}\n`;
                 msgText += `⚖️ น้ำหนักรวม: ${totalW} g\n💰 ยอดรวม: ฿${subtotalP}\n`;
                 if (discount > 0) msgText += `🎟️ ส่วนลด: -฿${discount}\n`;
                 msgText += `🔥 ยอดสุทธิ: ฿${finalP}\n👨‍💼 ผู้ทำรายการ: ${staffName}\n━━━━━━━━━━━━━━\n📦 รายการ:\n${itemList}`;
             }
             
-            // สร้าง Payload แบบอาร์เรย์ เผื่อมีรูปให้ยิงต่อกัน
+            // 🌟 จัด Payload ส่ง LINE: ข้อความ 1 + รูปไม่เกิน 4 รูป (รวมเป็น 5 Bubble ตามลิมิต)
             let messagesArray = [{ type: 'text', text: msgText }];
-            if (evidenceUrl) {
-                messagesArray.push({
-                    type: 'image',
-                    originalContentUrl: evidenceUrl,
-                    previewImageUrl: evidenceUrl
-                });
+            if (evidenceUrlsStr) {
+                try {
+                    let urls = JSON.parse(evidenceUrlsStr);
+                    if(Array.isArray(urls)) {
+                        let lineImages = urls.slice(0, 4); // เอาแค่ 4 รูปแรกส่ง LINE เพื่อไม่ให้ Error
+                        lineImages.forEach(url => { messagesArray.push({ type: 'image', originalContentUrl: url, previewImageUrl: url }); });
+                    }
+                } catch(e) {}
             }
 
             await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.line.me/v2/bot/message/push'), { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
-                body: JSON.stringify({ to: userId, messages: messagesArray }) 
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ to: userId, messages: messagesArray }) 
             }).catch(e => console.warn(e));
+        }
+
+        // 🌟 ปริ้นท์สลิป / ใบกำกับภาษี
+        function printReceipt(customer, taxAddress, taxId, items, subtotal, discount, total, staff, isTaxInvoice) {
+            let today = new Date().toLocaleString('th-TH');
+            document.getElementById('r-date').innerText = today;
+            document.getElementById('r-customer').innerText = customer || 'ลูกค้าทั่วไป';
+            
+            if(isTaxInvoice) {
+                document.getElementById('receipt-type').innerText = "ใบกำกับภาษี (TAX INVOICE)";
+                document.getElementById('r-tax-section').style.display = 'block';
+                document.getElementById('r-address').innerText = taxAddress || '-';
+                document.getElementById('r-taxid').innerText = taxId || '-';
+            } else {
+                document.getElementById('receipt-type').innerText = "ใบเสร็จรับเงิน (RECEIPT)";
+                document.getElementById('r-tax-section').style.display = 'none';
+            }
+
+            if(clinicConfig.isActive && clinicConfig.doctorName) {
+                document.getElementById('r-doctor-section').style.display = 'block';
+                document.getElementById('r-doctor').innerText = clinicConfig.doctorName;
+            }
+
+            let tbody = document.getElementById('r-items');
+            tbody.innerHTML = '';
+            items.forEach(item => {
+                let tr = document.createElement('tr');
+                tr.innerHTML = `<td style="text-align: left; padding: 2px 0;">${item.name}</td><td style="text-align: right; padding: 2px 0;">${item.weight}g</td><td style="text-align: right; padding: 2px 0;">${item.weight * item.base}</td>`;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('r-subtotal').innerText = subtotal;
+            document.getElementById('r-discount').innerText = discount;
+            document.getElementById('r-total').innerText = total;
+            document.getElementById('r-staff').innerText = staff;
+
+            window.print();
         }
 
         async function checkout(orderType = 'SALE') {
             let customer = document.getElementById('customer-name').value.trim(); 
             let customerId = document.getElementById('customer-id').value.trim(); 
+            let isTaxInvoice = document.getElementById('tax-invoice-toggle').checked;
+            let taxAddress = document.getElementById('tax-address').value.trim();
+            let taxId = document.getElementById('tax-id-number').value.trim();
             
-            if(!customer) return alert("⚠️ กรุณาระบุชื่อลูกค้า/ผู้รับ!");
+            if(!customer) { showToast("⚠️ กรุณาระบุชื่อลูกค้า/ผู้รับ!"); return document.getElementById('customer-name').focus(); }
             let validCart = cart.filter(item => item.weight > 0); 
-            if(validCart.length === 0) return alert("⚠️ ตะกร้าว่างเปล่า!");
+            if(validCart.length === 0) return showToast("⚠️ ตะกร้าว่างเปล่า!");
 
-            // 🌟 เช็กระบบรูปหลักฐานก่อนส่งของ
-            const evidenceFile = document.getElementById('order-evidence').files[0];
-            if (orderType === 'SALE' && !evidenceFile) {
+            const evidenceFiles = document.getElementById('order-evidence').files;
+            if (orderType === 'SALE' && evidenceFiles.length === 0) {
                 return alert("⚠️ บังคับ! กรุณาแนบรูปถ่ายหลักฐาน (สินค้าก่อนแพ็ก/บิล) ก่อนยืนยันคำสั่งซื้อค่ะ!");
             }
+            if(evidenceFiles.length > 5) return alert("⚠️ รองรับหลักฐานสูงสุด 5 รูปต่อ 1 บิลค่ะ");
 
-            if(orderType === 'GIVEAWAY') {
-                if(!confirm("🎁 ยืนยันการตัดสต๊อกเป็น 'งบรับรอง (แจกฟรี)' ใช่หรือไม่?\\n(ยอดขายจะเป็น 0 และจะบันทึกเป็นต้นทุนบริษัท)")) return;
-            }
+            if(orderType === 'GIVEAWAY') { if(!confirm("🎁 ยืนยันการตัดสต๊อกเป็น 'งบรับรอง (แจกฟรี)' ใช่หรือไม่?")) return; }
 
             let pin = prompt("👤 ยืนยันรหัสพนักงาน (PIN) เพื่อปิดบิล:"); if (!pin) return;
-            let staffUser = SYSTEM_PINS[pin]; if (!staffUser) return alert("❌ รหัสพนักงานไม่ถูกต้อง! ไม่สามารถทำรายการได้");
-            
-            if(orderType === 'GIVEAWAY' && staffUser.role !== 'CEO' && staffUser.role !== 'Manager') {
-                return alert("❌ ไม่มีสิทธิ์! (การแจกงบรับรองสงวนสิทธิ์เฉพาะ CEO หรือ Manager เท่านั้น)");
-            }
-
+            let staffUser = SYSTEM_PINS[pin]; if (!staffUser) return alert("❌ รหัสพนักงานไม่ถูกต้อง!");
+            if(orderType === 'GIVEAWAY' && staffUser.role !== 'CEO' && staffUser.role !== 'Manager') return alert("❌ ไม่มีสิทธิ์! (เฉพาะผู้บริหาร)");
             let staffName = staffUser.name;
 
-            const btn = document.getElementById('checkout-btn'); 
-            const giveawayBtn = document.getElementById('giveaway-btn');
-            const btnOriginalText = btn.innerHTML;
-            btn.innerHTML = "⏳ กำลังบันทึก..."; btn.disabled = true;
-            if(giveawayBtn) giveawayBtn.disabled = true;
+            const btn = document.getElementById('checkout-btn'); const giveawayBtn = document.getElementById('giveaway-btn');
+            const loading = document.getElementById('loadingOverlay');
+            btn.innerHTML = "⏳ กำลังบันทึก..."; btn.disabled = true; if(giveawayBtn) giveawayBtn.disabled = true;
+            loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "📸 กำลังบีบอัดภาพ...";
 
             try {
-                let finalEvidenceUrl = null;
-                
-                // 🌟 อัปโหลดหลักฐานก่อนแพ็กขึ้นคลาวด์
-                if (evidenceFile) {
-                    btn.innerHTML = "📸 อัปโหลดหลักฐาน...";
-                    const evExt = evidenceFile.name.split('.').pop(); 
-                    const evName = `outbound_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${evExt}`;
-                    const { error: evUploadErr } = await _supabase.storage.from('ztech_evidence').upload(evName, evidenceFile); 
-                    if (evUploadErr) throw evUploadErr;
-                    const { data: evUrlData } = _supabase.storage.from('ztech_evidence').getPublicUrl(evName); 
-                    finalEvidenceUrl = evUrlData.publicUrl;
+                let finalEvidenceUrlStr = null;
+                // 🌟 อัปโหลดหลักฐานแบบรัวๆ (Multiple)
+                if (evidenceFiles.length > 0) {
+                    let uploadedUrls = [];
+                    for(let i=0; i < evidenceFiles.length; i++) {
+                        let compEv = await compressImage(evidenceFiles[i]);
+                        const evExt = compEv.name.split('.').pop(); 
+                        const evName = `outbound_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${evExt}`;
+                        const { error: evUploadErr } = await _supabase.storage.from('ztech_evidence').upload(evName, compEv); 
+                        if (evUploadErr) throw evUploadErr;
+                        const { data: evUrlData } = _supabase.storage.from('ztech_evidence').getPublicUrl(evName); 
+                        uploadedUrls.push(evUrlData.publicUrl);
+                    }
+                    finalEvidenceUrlStr = JSON.stringify(uploadedUrls); // เก็บรวบเป็น Array
                 }
 
-                btn.innerHTML = "💾 บันทึกฐานข้อมูล...";
+                document.getElementById('loadingText').innerText = "💾 กำลังตัดสต๊อก...";
                 let totalCost = 0;
 
                 for (let item of validCart) {
@@ -478,7 +615,7 @@
                     let logActionLabel = orderType === 'GIVEAWAY' ? `POS: ${customer} (GIVEAWAY) [${staffName}]` : `POS: ${customer} [${staffName}]`;
                     await _supabase.from('ztech_logs').insert([{ 
                         sku: item.sku || 'N/A', action_type: 'OUT', weight_change: item.weight, performed_by: logActionLabel,
-                        evidence_url: finalEvidenceUrl 
+                        evidence_url: finalEvidenceUrlStr 
                     }]);
                 }
 
@@ -489,49 +626,43 @@
                 });
                 
                 let finalP = Math.max(0, subtotalP - specialDiscount);
-                if (orderType === 'GIVEAWAY') {
-                    finalP = 0;
-                }
+                if (orderType === 'GIVEAWAY') finalP = 0;
+
+                document.getElementById('loadingText').innerText = "📝 กำลังสร้างบิล...";
+                // ถ้าออกใบกำกับภาษี ให้ต่อท้ายชื่อด้วยข้อมูล Tax
+                let recordCustomer = isTaxInvoice ? `${customer} [TAX: ${taxId}]` : customer;
 
                 await _supabase.from('ztech_orders').insert([{ 
-                    cart_items: validCart, 
-                    total_weight: totalW, 
-                    seller_name: customer, 
-                    customer_id: customerId, 
-                    discount_amount: orderType === 'GIVEAWAY' ? 0 : specialDiscount, 
-                    net_price: finalP, 
-                    status: 'ACTIVE',
-                    order_type: orderType,   
-                    total_cost: totalCost,
-                    evidence_url: finalEvidenceUrl // 🌟 ฝังลิงก์หลักฐานลงไปในบิล
+                    cart_items: validCart, total_weight: totalW, seller_name: recordCustomer, customer_id: customerId, 
+                    discount_amount: orderType === 'GIVEAWAY' ? 0 : specialDiscount, net_price: finalP, status: 'ACTIVE',
+                    order_type: orderType, total_cost: totalCost, evidence_url: finalEvidenceUrlStr 
                 }]);
                 
-                // ส่งใบเสร็จพร้อมรูปภาพหลักฐานเข้า LINE
-                await sendLineSlip(customer, customerId, validCart, totalW, subtotalP, finalP, specialDiscount, staffName, orderType, totalCost, finalEvidenceUrl);
+                document.getElementById('loadingText').innerText = "📲 กำลังส่งเข้า LINE...";
+                await sendLineSlip(customer, customerId, validCart, totalW, subtotalP, finalP, specialDiscount, staffName, orderType, totalCost, finalEvidenceUrlStr);
 
-                if (orderType === 'GIVEAWAY') {
-                    alert(`🎁 ทำรายการแจกฟรีให้ [${customer}] สำเร็จ!\\n(ระบบบันทึกต้นทุน -฿${totalCost.toLocaleString()} เรียบร้อย)`);
-                } else {
-                    alert(`✅ ปิดการขายให้ [${customer}] สำเร็จ โดย ${staffName}`);
-                }
+                loading.style.display = 'none';
                 
+                // 🌟 ปริ้นท์ใบเสร็จ/ใบกำกับภาษีทันทีเมื่อสำเร็จ (ถ้าไม่ใช่แจกฟรี)
+                if(orderType === 'SALE') {
+                    printReceipt(customer, taxAddress, taxId, validCart, subtotalP, specialDiscount, finalP, staffName, isTaxInvoice);
+                }
+
+                showToast(`✅ ปิดการขายให้ [${customer}] สำเร็จ`);
+                
+                // Reset ค่ากลับ
                 cart = []; specialDiscount = 0; 
-                document.getElementById('customer-name').value = ''; 
-                document.getElementById('customer-id').value = '';
-                document.getElementById('order-evidence').value = ''; // เคลียร์ช่องหลักฐาน
-                renderCart(); loadImperialVault(); 
+                document.getElementById('customer-name').value = ''; document.getElementById('customer-id').value = '';
+                document.getElementById('order-evidence').value = ''; document.getElementById('tax-invoice-toggle').checked = false;
+                toggleTaxFields(); renderCart(); loadImperialVault(); 
             } catch (error) { 
                 alert("❌ ขัดข้อง: " + error.message); 
             } finally { 
-                btn.innerHTML = "✅ ยืนยันคำสั่งซื้อ"; btn.disabled = false; 
-                if(giveawayBtn) giveawayBtn.disabled = false;
+                btn.innerHTML = "✅ ยืนยันคำสั่งซื้อ"; btn.disabled = false; if(giveawayBtn) giveawayBtn.disabled = false; loading.style.display = 'none';
             }
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            loadClinicSettings();
-            loadImperialVault();
-        });
+        window.addEventListener('DOMContentLoaded', () => { loadClinicSettings(); loadImperialVault(); });
     </script>
 </body>
 </html>
