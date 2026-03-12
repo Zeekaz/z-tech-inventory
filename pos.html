@@ -31,17 +31,14 @@
         #qr-reader__dashboard { background: #111; color: #fff; padding: 10px; }
         #qr-reader__dashboard_section_csr button { background: #4a0e4e; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
 
-        /* 🌟 ระบบแสดงข้อความแจ้งเตือนแบบเนียนๆ (Toast) */
         #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 5px; padding: 10px; position: fixed; z-index: 50; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; border: 1px solid #d4af37; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
         #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
 
-        /* 🌟 สไตล์สำหรับการพิมพ์ใบเสร็จ (Thermal Printer 80mm) */
         @media print {
             body * { visibility: hidden; }
             #receipt-container, #receipt-container * { visibility: visible; }
             #receipt-container { position: absolute; left: 0; top: 0; width: 80mm; padding: 5mm; background: white; color: black; font-family: 'Courier New', Courier, monospace; font-size: 12px; }
             .no-print { display: none !important; }
-            /* ปิดสีพื้นหลังตอนปริ้นท์ */
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
 
@@ -62,11 +59,12 @@
     <div class="w-full md:w-[60%] lg:w-2/3 h-[50vh] md:h-full p-3 md:p-5 overflow-y-auto border-b md:border-b-0 md:border-r border-zPurple flex flex-col no-print">
         <div class="flex justify-between items-center mb-3 border-b border-gray-800 pb-2 shrink-0">
             <h1 class="text-xl md:text-2xl font-bold text-goldDark tracking-widest uppercase flex items-center gap-2">
-                🌑 Z-Tech Inventory
+                🌑 Z-Tech POS
                 <span id="clinic-status-badge" style="display:none;" class="text-[10px] bg-[#0a2a0a] border border-[#39ff14] text-[#39ff14] px-2 py-0.5 rounded-full shadow-[0_0_5px_rgba(57,255,20,0.5)]">
-                    🏥 Clinic Mode: ON
+                    🏥 Clinic: ON
                 </span>
             </h1>
+            <a href="dashboard.html" class="text-xs border border-gray-600 text-gray-400 hover:text-white hover:border-white px-2 py-1 rounded transition-colors">⬅ คลังสินค้า</a>
         </div>
 
         <div class="flex flex-col gap-2 mb-3 shrink-0">
@@ -75,25 +73,11 @@
                 <select id="farm-filter" class="w-1/4 bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-sm" onchange="filterInventory()">
                     <option value="">-- ทุกฟาร์ม --</option>
                 </select>
-            </div>
-            <div class="flex gap-2">
-                <select id="category-filter" class="w-1/2 bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-sm" onchange="filterInventory()">
-                    <option value="">-- ทุกประเภท --</option>
-                    <option value="ดอก">ดอก (Flower)</option>
-                    <option value="ผง">ผง (Powder)</option>
-                    <option value="ใต้เครื่อง">ใต้เครื่อง (Kief)</option>
-                    <option value="ใบทริม">ใบทริม (Trim)</option>
-                    <option value="ไฟน้อลทริม">ไฟน้อลทริม (Final Trim)</option>
-                </select>
-                <select id="grade-filter" class="w-1/2 bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-sm" onchange="filterInventory()">
-                    <option value="">-- ทุกเกรด --</option>
-                    <option value="Top">Top</option>
-                    <option value="Mid">Mid</option>
-                    <option value="Pop">Pop</option>
-                    <option value="Mini-pop">Mini-pop</option>
-                    <option value="Mixed">Mixed</option>
-                    <option value="Other">Other</option>
-                    <option value="-">-</option>
+                <select id="type-filter" class="w-1/4 bg-gray-900 border border-gray-700 text-white p-2 rounded focus:outline-none focus:border-neonGreen text-sm" onchange="filterInventory()">
+                    <option value="">-- Type --</option>
+                    <option value="Sativa">Sativa</option>
+                    <option value="Indica">Indica</option>
+                    <option value="Hybrid">Hybrid</option>
                 </select>
             </div>
             <div id="category-tabs" class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide pt-1">
@@ -147,7 +131,10 @@
         <div class="bg-gray-900 p-3 rounded border border-gray-800 mb-3 shrink-0" id="summary-box">
             <div class="flex justify-between text-gray-400 text-xs mb-1">
                 <span>น้ำหนักรวม:</span>
-                <span id="total-grams" class="text-white font-bold">0 g</span>
+                <div class="text-right">
+                    <span id="total-grams" class="text-white font-bold text-sm">0 g</span>
+                    <div id="upsell-hint" class="text-[10px] text-yellow-500 mt-0.5 animate-pulse"></div>
+                </div>
             </div>
             <div class="flex justify-between text-gray-400 text-xs mb-1">
                 <span>ยอดก่อนลด:</span>
@@ -232,7 +219,6 @@
         let globalInventory = []; 
         let currentCategory = 'All'; 
         let html5QrcodeScanner = null;
-
         let clinicConfig = { isActive: false, doctorName: '', doctorLicense: '' };
 
         function showToast(message) {
@@ -247,7 +233,6 @@
             document.getElementById('tax-fields').style.display = isChecked ? 'flex' : 'none';
         }
 
-        // 🌟 AI บีบอัดรูปภาพก่อนโยนขึ้น Cloud (ลอกมาจาก dashboard)
         async function compressImage(file, maxWidth = 800, quality = 0.7) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -333,26 +318,33 @@
             const grid = document.getElementById('product-grid'); grid.innerHTML = '';
             const searchTerm = document.getElementById('search-inventory').value.toLowerCase();
             const farmTerm = document.getElementById('farm-filter').value;
-            const categoryTerm = document.getElementById('category-filter').value;
-            const gradeTerm = document.getElementById('grade-filter').value;
+            const typeTerm = document.getElementById('type-filter').value;
 
             let filteredData = globalInventory.filter(item => {
                 const farmNameStr = item.farm_name ? item.farm_name.toLowerCase() : "";
                 const matchSearch = item.strain_name.toLowerCase().includes(searchTerm) || (item.sku && item.sku.toLowerCase().includes(searchTerm)) || farmNameStr.includes(searchTerm);
                 const matchFarm = farmTerm === "" || item.farm_name === farmTerm;
                 const matchCategory = currentCategory === "All" || item.category === currentCategory;
-                const matchCatDropdown = categoryTerm === "" || item.category === categoryTerm;
-                const matchGrade = gradeTerm === "" || item.grade === gradeTerm;
-                return matchSearch && matchFarm && matchCategory && matchCatDropdown && matchGrade;
+                
+                const dbType = item.strain_type || '-';
+                const matchType = typeTerm === "" || dbType === typeTerm;
+
+                return matchSearch && matchFarm && matchCategory && matchType;
             });
 
             if(filteredData.length === 0) { grid.innerHTML = '<p class="text-gray-500 col-span-3 lg:col-span-5 text-center text-sm mt-4">ไม่พบสินค้า</p>'; return; }
 
             filteredData.forEach(item => {
                 let basePrice = item.price_base || 0; let tier1Price = item.price_tier1 || 0; let tier2Price = item.price_tier2 || 0;
-                // 🌟 ใส่ loading="lazy" ให้รูปโหลดไวขึ้น
                 let imgDisplay = item.image_url ? `<img src="${item.image_url}" loading="lazy" class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">` : `<span class="text-gray-600 font-bold uppercase tracking-widest text-[10px]">${item.category || 'ITEM'}</span>`;
-                let gradeDisplay = item.grade && item.grade !== '-' ? `<div class="absolute top-1 right-1 bg-zPurple text-[9px] px-1.5 py-0.5 rounded text-white shadow-md border border-purple-500">${item.grade}</div>` : '';
+                let gradeDisplay = item.grade && item.grade !== '-' ? `<div class="absolute top-1 right-1 bg-zPurple text-[9px] px-1.5 py-0.5 rounded text-white shadow-md border border-purple-500 z-10">${item.grade}</div>` : '';
+                
+                // 🌟 ระบบดึงสี Sativa/Indica มาโชว์มุมซ้ายบน
+                let typeBadge = '';
+                if(item.strain_type === 'Sativa') typeBadge = `<div class="absolute top-1 left-1 bg-red-950/90 text-[8px] px-1.5 py-0.5 rounded text-red-400 border border-red-600 z-10 font-bold tracking-wider">SATIVA</div>`;
+                else if(item.strain_type === 'Indica') typeBadge = `<div class="absolute top-1 left-1 bg-purple-950/90 text-[8px] px-1.5 py-0.5 rounded text-purple-400 border border-purple-600 z-10 font-bold tracking-wider">INDICA</div>`;
+                else if(item.strain_type === 'Hybrid') typeBadge = `<div class="absolute top-1 left-1 bg-green-950/90 text-[8px] px-1.5 py-0.5 rounded text-green-400 border border-green-600 z-10 font-bold tracking-wider">HYBRID</div>`;
+
                 let isOutOfStock = item.stock_weight <= 0;
                 let outOfStockClass = isOutOfStock ? "opacity-50 grayscale cursor-not-allowed" : "cursor-pointer purple-glow";
                 let stockTextClass = isOutOfStock ? "text-red-500 font-bold" : "text-neonGreen font-bold";
@@ -363,9 +355,9 @@
                     <div class="bg-gray-900 rounded p-2 transition-all duration-300 border border-gray-800 relative flex flex-col h-full ${outOfStockClass}" 
                          onclick="addToCart('${item.strain_name}', ${basePrice}, ${tier1Price}, ${tier2Price}, ${safeWeight}, '${item.sku}')">
                         <div class="aspect-square w-full bg-black rounded border border-gray-700 mb-1 flex items-center justify-center overflow-hidden relative shrink-0">
-                            ${imgDisplay}${gradeDisplay}
+                            ${typeBadge}${imgDisplay}${gradeDisplay}
                         </div>
-                        <div class="flex-grow flex flex-col justify-end">
+                        <div class="flex-grow flex flex-col justify-end mt-1">
                             <h2 class="text-[11px] md:text-xs font-bold text-white mb-1 leading-tight line-clamp-2">${item.strain_name}</h2>
                             <div class="flex justify-between items-end text-[9px] md:text-[10px] text-gray-400 mt-auto pt-1 border-t border-gray-800">
                                 <span class="${stockTextClass}">${stockLabel}</span>
@@ -395,20 +387,25 @@
         function addToCart(name, base, t1, t2, stock, sku) {
             if (stock <= 0) return showToast(`⚠️ สินค้าหมด: [${name}] ไม่มีสินค้าในคลังค่ะ`);
             
-            // 🌟 เช็กซ้ำด้วย Toast และโฟกัสช่องน้ำหนักอัตโนมัติ (UX)
             let existingIndex = cart.findIndex(item => item.name === name);
             if (existingIndex !== -1) {
                 showToast(`ℹ️ มี [${name}] ในตะกร้าแล้วค่ะ`);
-                document.getElementById(`weight-input-${existingIndex}`).focus();
+                // 🌟 เลือกลบข้อความเดิมเพื่อพิมพ์ใหม่ทันที
+                let input = document.getElementById(`weight-input-${existingIndex}`);
+                input.focus(); input.select();
                 return;
             }
             
             cart.push({ name, base, t1, t2, stock, sku, weight: 0 }); 
             renderCart();
-            // โฟกัสช่องที่เพิ่งเพิ่มล่าสุดทันที
-            setTimeout(() => { document.getElementById(`weight-input-${cart.length-1}`).focus(); }, 100);
+            // 🌟 สร้างแล้ว Select เลย
+            setTimeout(() => { 
+                let input = document.getElementById(`weight-input-${cart.length-1}`);
+                input.focus(); input.select();
+            }, 100);
         }
 
+        // 🌟 เพิ่มปุ่ม Quick Weight ในตะกร้า
         function renderCart() {
             const cartDiv = document.getElementById('cart-items');
             if (cart.length === 0) { cartDiv.innerHTML = '<p class="text-gray-600 text-center mt-5 text-sm">ตะกร้าว่างเปล่า...</p>'; calculateTotals(); return; }
@@ -420,8 +417,16 @@
                         <span class="font-bold text-white text-xs truncate w-3/4">${item.name} <span class="text-[9px] text-gray-500">(${item.stock}g)</span></span>
                         <button class="text-red-500 text-xs" onclick="removeFromCart(${index})">✖</button>
                     </div>
-                    <div class="flex gap-1">
-                        <input type="number" id="weight-input-${index}" step="any" placeholder="กรัม" class="w-1/2 bg-black border border-gray-700 text-white p-1 rounded text-center text-xs focus:border-neonGreen outline-none transition-colors" value="${item.weight || ''}" oninput="updateWeightFast(${index}, this.value)" max="${item.stock}">
+                    <div class="flex gap-1 items-stretch">
+                        <div class="flex flex-col w-1/2 gap-1">
+                            <input type="number" id="weight-input-${index}" step="any" placeholder="กรัม" class="bg-black border border-gray-700 text-white p-1 rounded text-center text-xs focus:border-neonGreen outline-none transition-colors" value="${item.weight || ''}" oninput="updateWeightFast(${index}, this.value)" max="${item.stock}">
+                            <div class="flex gap-1 justify-center">
+                                <button onclick="addWeightFast(${index}, 1)" class="flex-1 bg-gray-800 border border-gray-700 text-[9px] rounded text-gray-300 hover:bg-gray-700 hover:text-white py-0.5">+1</button>
+                                <button onclick="addWeightFast(${index}, 3.5)" class="flex-1 bg-gray-800 border border-gray-700 text-[9px] rounded text-gray-300 hover:bg-gray-700 hover:text-white py-0.5">+3.5</button>
+                                <button onclick="addWeightFast(${index}, 5)" class="flex-1 bg-gray-800 border border-gray-700 text-[9px] rounded text-gray-300 hover:bg-gray-700 hover:text-white py-0.5">+5</button>
+                                <button onclick="addWeightFast(${index}, 'MAX')" class="flex-1 bg-zPurple border border-purple-500 text-[9px] rounded text-white hover:bg-purple-800 py-0.5">MAX</button>
+                            </div>
+                        </div>
                         <div class="w-1/2 bg-black flex flex-col justify-center items-center rounded border border-gray-700 py-1">
                             <span id="price-display-${index}" class="text-white font-bold text-xs">฿${item.base}</span>
                         </div>
@@ -430,6 +435,15 @@
                 cartDiv.insertAdjacentHTML('beforeend', itemHTML);
             });
             calculateTotals();
+        }
+
+        // 🌟 ฟังก์ชันบวกน้ำหนักด่วน
+        function addWeightFast(index, amount) {
+            let current = parseFloat(cart[index].weight) || 0;
+            let target = amount === 'MAX' ? cart[index].stock : current + amount;
+            let inputField = document.getElementById(`weight-input-${index}`);
+            inputField.value = target;
+            updateWeightFast(index, target);
         }
 
         function updateWeightFast(index, value) {
@@ -472,6 +486,19 @@
                 if (priceDisplay) { priceDisplay.innerText = `฿${activePrice}`; priceDisplay.className = `${activeColor} font-bold text-xs`; }
             });
 
+            // 🌟 Logic ระบบ Upsell Tracker
+            let upsellHint = document.getElementById('upsell-hint');
+            if (totalWeight === 0) {
+                upsellHint.innerText = '';
+            } else if (totalWeight < 100) {
+                upsellHint.innerText = `🔥 อีก ${(100 - totalWeight).toFixed(1)}g ได้ราคาส่ง 1 ขีด`;
+            } else if (totalWeight >= 100 && totalWeight < 1000) {
+                upsellHint.innerText = `👑 อีก ${(1000 - totalWeight).toFixed(1)}g ได้ราคาส่ง 1 กิโลฯ`;
+            } else {
+                upsellHint.innerText = `⭐ รับเรทราคาส่ง VIP สูงสุดแล้ว`;
+                upsellHint.className = "text-[10px] text-neonGreen mt-0.5";
+            }
+
             if (specialDiscount > subtotalPrice) specialDiscount = subtotalPrice;
             let finalPrice = subtotalPrice - specialDiscount;
             document.getElementById('total-grams').innerText = `${totalWeight.toLocaleString()} g`;
@@ -481,7 +508,6 @@
             document.getElementById('total-price').className = `${activeColor} text-xl`;
         }
 
-        // 🌟 อัปเกรดให้ยิงรูปภาพไปพร้อมกับข้อความใน LINE (ยิงเป็นชุด)
         async function sendLineSlip(customer, customerId, cartItems, totalW, subtotalP, finalP, discount, staffName, orderType, totalCost, evidenceUrlsStr) {
             const token = '2mqUKe/Rb3dM/vKhOPvuXB8ag0eCS7t8ITrg5+NRiTWKXhgeA/aypMOZc5aDDvpufwkkeioOULxPu7/57MGs7Y1HGGfMW7xZd9vQD0lyY5DID8X9dfYv6AYHm3q1vqLDHzsrPO51asEQDb7stjyMSgdB04t89/1O/w1cDnyilFU=';
             const userId = 'Cbf93761b1ac023b9fbe28afa7efbfb16'; 
@@ -502,13 +528,12 @@
                 msgText += `🔥 ยอดสุทธิ: ฿${finalP}\n👨‍💼 ผู้ทำรายการ: ${staffName}\n━━━━━━━━━━━━━━\n📦 รายการ:\n${itemList}`;
             }
             
-            // 🌟 จัด Payload ส่ง LINE: ข้อความ 1 + รูปไม่เกิน 4 รูป (รวมเป็น 5 Bubble ตามลิมิต)
             let messagesArray = [{ type: 'text', text: msgText }];
             if (evidenceUrlsStr) {
                 try {
                     let urls = JSON.parse(evidenceUrlsStr);
                     if(Array.isArray(urls)) {
-                        let lineImages = urls.slice(0, 4); // เอาแค่ 4 รูปแรกส่ง LINE เพื่อไม่ให้ Error
+                        let lineImages = urls.slice(0, 4); 
                         lineImages.forEach(url => { messagesArray.push({ type: 'image', originalContentUrl: url, previewImageUrl: url }); });
                     }
                 } catch(e) {}
@@ -519,7 +544,6 @@
             }).catch(e => console.warn(e));
         }
 
-        // 🌟 ปริ้นท์สลิป / ใบกำกับภาษี
         function printReceipt(customer, taxAddress, taxId, items, subtotal, discount, total, staff, isTaxInvoice) {
             let today = new Date().toLocaleString('th-TH');
             document.getElementById('r-date').innerText = today;
@@ -587,7 +611,6 @@
 
             try {
                 let finalEvidenceUrlStr = null;
-                // 🌟 อัปโหลดหลักฐานแบบรัวๆ (Multiple)
                 if (evidenceFiles.length > 0) {
                     let uploadedUrls = [];
                     for(let i=0; i < evidenceFiles.length; i++) {
@@ -599,7 +622,7 @@
                         const { data: evUrlData } = _supabase.storage.from('ztech_evidence').getPublicUrl(evName); 
                         uploadedUrls.push(evUrlData.publicUrl);
                     }
-                    finalEvidenceUrlStr = JSON.stringify(uploadedUrls); // เก็บรวบเป็น Array
+                    finalEvidenceUrlStr = JSON.stringify(uploadedUrls); 
                 }
 
                 document.getElementById('loadingText').innerText = "💾 กำลังตัดสต๊อก...";
@@ -629,7 +652,6 @@
                 if (orderType === 'GIVEAWAY') finalP = 0;
 
                 document.getElementById('loadingText').innerText = "📝 กำลังสร้างบิล...";
-                // ถ้าออกใบกำกับภาษี ให้ต่อท้ายชื่อด้วยข้อมูล Tax
                 let recordCustomer = isTaxInvoice ? `${customer} [TAX: ${taxId}]` : customer;
 
                 await _supabase.from('ztech_orders').insert([{ 
@@ -643,14 +665,12 @@
 
                 loading.style.display = 'none';
                 
-                // 🌟 ปริ้นท์ใบเสร็จ/ใบกำกับภาษีทันทีเมื่อสำเร็จ (ถ้าไม่ใช่แจกฟรี)
                 if(orderType === 'SALE') {
                     printReceipt(customer, taxAddress, taxId, validCart, subtotalP, specialDiscount, finalP, staffName, isTaxInvoice);
                 }
 
                 showToast(`✅ ปิดการขายให้ [${customer}] สำเร็จ`);
                 
-                // Reset ค่ากลับ
                 cart = []; specialDiscount = 0; 
                 document.getElementById('customer-name').value = ''; document.getElementById('customer-id').value = '';
                 document.getElementById('order-evidence').value = ''; document.getElementById('tax-invoice-toggle').checked = false;
