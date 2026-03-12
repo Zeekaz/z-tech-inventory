@@ -336,10 +336,16 @@
 
             filteredData.forEach(item => {
                 let basePrice = item.price_base || 0; let tier1Price = item.price_tier1 || 0; let tier2Price = item.price_tier2 || 0;
-                let imgDisplay = item.image_url ? `<img src="${item.image_url}" loading="lazy" class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">` : `<span class="text-gray-600 font-bold uppercase tracking-widest text-[10px]">${item.category || 'ITEM'}</span>`;
+                
+                // 🌟 Z-Tech Image CDN Optimizer (แปลงรูประยะไกลให้เล็กลงแบบ Real-time โดยไม่ต้องอัปโหลดใหม่)
+                let optimizedUrl = item.image_url;
+                if(item.image_url && item.image_url.includes('supabase.co')) {
+                    optimizedUrl = `https://wsrv.nl/?url=${encodeURIComponent(item.image_url)}&w=250&output=webp&q=80`;
+                }
+
+                let imgDisplay = item.image_url ? `<img src="${optimizedUrl}" loading="lazy" class="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity">` : `<span class="text-gray-600 font-bold uppercase tracking-widest text-[10px]">${item.category || 'ITEM'}</span>`;
                 let gradeDisplay = item.grade && item.grade !== '-' ? `<div class="absolute top-1 right-1 bg-zPurple text-[9px] px-1.5 py-0.5 rounded text-white shadow-md border border-purple-500 z-10">${item.grade}</div>` : '';
                 
-                // 🌟 ระบบดึงสี Sativa/Indica มาโชว์มุมซ้ายบน
                 let typeBadge = '';
                 if(item.strain_type === 'Sativa') typeBadge = `<div class="absolute top-1 left-1 bg-red-950/90 text-[8px] px-1.5 py-0.5 rounded text-red-400 border border-red-600 z-10 font-bold tracking-wider">SATIVA</div>`;
                 else if(item.strain_type === 'Indica') typeBadge = `<div class="absolute top-1 left-1 bg-purple-950/90 text-[8px] px-1.5 py-0.5 rounded text-purple-400 border border-purple-600 z-10 font-bold tracking-wider">INDICA</div>`;
@@ -390,7 +396,6 @@
             let existingIndex = cart.findIndex(item => item.name === name);
             if (existingIndex !== -1) {
                 showToast(`ℹ️ มี [${name}] ในตะกร้าแล้วค่ะ`);
-                // 🌟 เลือกลบข้อความเดิมเพื่อพิมพ์ใหม่ทันที
                 let input = document.getElementById(`weight-input-${existingIndex}`);
                 input.focus(); input.select();
                 return;
@@ -398,14 +403,12 @@
             
             cart.push({ name, base, t1, t2, stock, sku, weight: 0 }); 
             renderCart();
-            // 🌟 สร้างแล้ว Select เลย
             setTimeout(() => { 
                 let input = document.getElementById(`weight-input-${cart.length-1}`);
                 input.focus(); input.select();
             }, 100);
         }
 
-        // 🌟 เพิ่มปุ่ม Quick Weight ในตะกร้า
         function renderCart() {
             const cartDiv = document.getElementById('cart-items');
             if (cart.length === 0) { cartDiv.innerHTML = '<p class="text-gray-600 text-center mt-5 text-sm">ตะกร้าว่างเปล่า...</p>'; calculateTotals(); return; }
@@ -437,7 +440,6 @@
             calculateTotals();
         }
 
-        // 🌟 ฟังก์ชันบวกน้ำหนักด่วน
         function addWeightFast(index, amount) {
             let current = parseFloat(cart[index].weight) || 0;
             let target = amount === 'MAX' ? cart[index].stock : current + amount;
@@ -486,7 +488,6 @@
                 if (priceDisplay) { priceDisplay.innerText = `฿${activePrice}`; priceDisplay.className = `${activeColor} font-bold text-xs`; }
             });
 
-            // 🌟 Logic ระบบ Upsell Tracker
             let upsellHint = document.getElementById('upsell-hint');
             if (totalWeight === 0) {
                 upsellHint.innerText = '';
