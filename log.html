@@ -227,6 +227,21 @@
             document.getElementById('time-filters').style.display = tabName === 'finance' ? 'flex' : 'none';
         }
 
+        // 🌟 เพิ่มฟังก์ชันที่หลุดไปกลับคืนมา!
+        function getStartDateISO() {
+            const now = new Date();
+            if (currentFilter === 'today') {
+                now.setHours(0, 0, 0, 0);
+            } else if (currentFilter === '7days') {
+                now.setDate(now.getDate() - 7);
+            } else if (currentFilter === '30days') {
+                now.setDate(now.getDate() - 30);
+            } else {
+                return null; 
+            }
+            return now.toISOString();
+        }
+
         function setDateFilter(filterType) {
             currentFilter = filterType;
             ['today', '7days', '30days', 'all', 'custom'].forEach(id => {
@@ -242,6 +257,7 @@
                 }
             });
             loadOrders();
+            loadStockLogs(); // 🌟 สั่งให้อัปเดตตาราง Logs ไปพร้อมกันด้วยเลย
         }
 
         async function initDashboard() {
@@ -257,7 +273,6 @@
             loadOrders(); loadStockLogs();
         }
 
-        // 🌟 ฟังก์ชันเปิดหน้าต่าง Gallery
         function openGallery(urlsArray) {
             if(!urlsArray || urlsArray.length === 0) return;
             galleryImages = urlsArray;
@@ -287,15 +302,14 @@
 
         function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
 
-        // ฟังก์ชันแปลงรูปแบบลิงก์ให้อ่าน Array ได้
         function buildEvidenceUI(evidenceData) {
             if(!evidenceData) return '';
             let urls = [];
             try { 
                 urls = JSON.parse(evidenceData); 
-                if(!Array.isArray(urls)) urls = [evidenceData]; // ถ้าไม่ใช่ Array ให้จับใส่ Array
+                if(!Array.isArray(urls)) urls = [evidenceData];
             } catch(e) { 
-                urls = [evidenceData]; // ถ้าพังแปลว่าเป็น String ธรรมดา
+                urls = [evidenceData];
             }
             
             if(urls.length > 0) {
@@ -526,7 +540,6 @@
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
-        // 🌟 อัปเกรดระบบปริ้นท์ ภ.ท.28 (มีลายเซ็นแพทย์)
         function printPhorThor28() {
             if(rawOrdersData.length === 0) return alert("ไม่มีข้อมูลสำหรับการออกรายงาน ภ.ท.28 ในช่วงเวลานี้");
             
