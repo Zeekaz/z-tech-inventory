@@ -10,7 +10,6 @@
         .container { max-width: 1100px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 8px; background: #111; box-shadow: 0 0 20px rgba(0,0,0,0.8); position: relative; }
         h1 { color: #d4af37; text-align: center; font-size: 26px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
         
-        /* 🌟 Floating Control Panel */
         .control-panel { position: absolute; top: 20px; left: 20px; z-index: 50; }
         .btn-gear { background: #050505; color: #d4af37; border: 1px solid #d4af37; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.8); }
         .btn-gear:hover { background: #1a1a1a; box-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
@@ -24,11 +23,8 @@
         th:hover { background: rgba(212, 175, 55, 0.1); }
         td { padding: 12px; border-bottom: 1px solid #222; font-size: 13px; vertical-align: middle; white-space: nowrap; }
         
-        /* 🌟 ระบบซ่อนคอลัมน์ Action อัตโนมัติ */
         .action-col { display: none !important; }
         body.manage-mode .action-col { display: table-cell !important; animation: fadeIn 0.3s; }
-
-        /* จัดการ sticky column ตอนเปิดโหมด Manage */
         body.manage-mode th:last-child, body.manage-mode td:last-child { position: sticky; right: 0; background-color: #111; z-index: 2; border-left: 2px solid #333; }
         body.manage-mode thead th:last-child { background-color: #050505; z-index: 3; }
         body.manage-mode tr:hover td:last-child { background-color: #1a1a1a; }
@@ -43,7 +39,7 @@
         .btn-action { background: #222; color: #d4af37; border: 1px solid #d4af37; padding: 6px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 11px; }
         .btn-action:hover { background: #d4af37; color: #000; }
 
-        .filter-section { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; margin-top: 50px; }
+        .filter-section { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; margin-top: 50px; align-items: center; }
         .filter-input { flex: 1; min-width: 120px; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; font-size: 13px; }
 
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); overflow-y: auto; }
@@ -113,14 +109,6 @@
             <select id="farm-filter" class="filter-input" onchange="filterTable()">
                 <option value="">-- ทุกฟาร์ม --</option>
             </select>
-            <select id="category-filter" class="filter-input" onchange="filterTable()">
-                <option value="">-- ประเภท --</option>
-                <option value="ดอก">ดอก (Flower)</option>
-                <option value="ผง">ผง (Powder)</option>
-                <option value="ใต้เครื่อง">ใต้เครื่อง (Kief)</option>
-                <option value="ใบทริม">ใบทริม (Trim)</option>
-                <option value="ไฟน้อลทริม">ไฟน้อลทริม (Final Trim)</option>
-            </select>
             <select id="type-filter" class="filter-input" onchange="filterTable()">
                 <option value="">-- สายพันธุ์ย่อย --</option>
                 <option value="Sativa">Sativa</option>
@@ -128,6 +116,7 @@
                 <option value="Hybrid">Hybrid</option>
                 <option value="-">-</option>
             </select>
+            <button id="btn-price-audit" class="filter-input" style="background:#8b0000; color:white; font-weight:bold; cursor:pointer; flex: 0.5;" onclick="togglePriceAudit()">🚨 สินค้าไม่มีราคา</button>
         </div>
 
         <div class="table-responsive">
@@ -202,18 +191,18 @@
             </div>
             <div class="grid-3">
                 <div class="form-group"><label>ปลีก (1g)</label><input type="number" step="any" id="f_base" class="form-input" placeholder="0"></div>
-                <div class="form-group"><label>ส่ง (1 ขีด) <span style="color:#ff4444; font-size:10px;">*(ราคาต่อ 1g)</span></label><input type="number" step="any" id="f_t1" class="form-input" placeholder="0"></div>
-                <div class="form-group"><label>ส่ง (1 กิโลฯ) <span style="color:#ff4444; font-size:10px;">*(ราคาต่อ 1g)</span></label><input type="number" step="any" id="f_t2" class="form-input" placeholder="0"></div>
+                <div class="form-group"><label>ส่ง (1 ขีด)</label><input type="number" step="any" id="f_t1" class="form-input" placeholder="0"></div>
+                <div class="form-group"><label>ส่ง (1 กิโลฯ)</label><input type="number" step="any" id="f_t2" class="form-input" placeholder="0"></div>
             </div>
 
             <div class="grid-2" style="margin-top: 10px;">
                 <div class="form-group">
                     <label style="color: #39ff14;">⚖️ สต๊อกแรกเข้า (กรัม)</label>
-                    <input type="text" id="f_stock" class="form-input" placeholder="เช่น 1000 หรือ 500.5" style="border-color: #39ff14; font-weight: bold;">
+                    <input type="text" id="f_stock" class="form-input" placeholder="เช่น 1000" style="border-color: #39ff14; font-weight: bold;">
                 </div>
                 <div class="form-group">
                     <label style="color: #d4af37;">📸 หลักฐาน (ตราชั่ง) *เลือกได้หลายรูป</label>
-                    <input type="file" id="f_evidence" class="form-input" accept="image/*" multiple capture="environment" style="padding: 6px; border-color: #d4af37; background: #222;">
+                    <input type="file" id="f_evidence" class="form-input" accept="image/*" multiple style="padding: 6px; border-color: #d4af37; background: #222;">
                 </div>
             </div>
             <div class="form-group" style="margin-top: 5px;">
@@ -231,51 +220,43 @@
             <h2 style="color:#b5952f; margin-top:0; text-align:center; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
                 ✏️ แก้ไขข้อมูลสินค้า (Master Data)
             </h2>
-            <p class="text-center text-[11px] text-gray-500 mb-4">* ไม่สามารถแก้ไขสต๊อกในหน้านี้ได้ (เพื่อความปลอดภัยทางบัญชี) โปรดใช้ปุ่ม ➕สต๊อก แทน</p>
+            <p class="text-center text-[11px] text-gray-500 mb-4">* ไม่สามารถแก้ไขสต๊อกในหน้านี้ได้ โปรดใช้ปุ่ม ➕สต๊อก แทน</p>
             
             <div class="grid-2">
-                <div class="form-group"><label>รหัส SKU (ห้ามแก้ไข)</label><input type="text" id="e_sku" class="form-input text-gray-500" readonly></div>
-                <div class="form-group"><label>ชื่อสายพันธุ์ / รายการ</label><input type="text" id="e_strain" class="form-input" style="border-color: #b5952f;" readonly title="ห้ามแก้ชื่อเพื่อป้องกันบั๊กสต๊อก"></div>
+                <div class="form-group"><label>รหัส SKU</label><input type="text" id="e_sku" class="form-input" readonly></div>
+                <div class="form-group"><label>ชื่อสายพันธุ์ / รายการ</label><input type="text" id="e_strain" class="form-input" style="border-color: #b5952f;" readonly></div>
             </div>
 
             <div class="grid-3">
                 <div class="form-group">
                     <label>ประเภท</label>
                     <select id="e_category" class="form-input" onchange="toggleGrade('e_category', 'e_grade')">
-                        <option value="ดอก">ดอก (Flower)</option>
-                        <option value="ผง">ผง (Powder)</option>
-                        <option value="ใต้เครื่อง">ใต้เครื่อง (Kief)</option>
-                        <option value="ใบทริม">ใบทริม (Trim)</option>
-                        <option value="ไฟน้อลทริม">ไฟน้อลทริม (Final Trim)</option>
+                        <option value="ดอก">ดอก (Flower)</option><option value="ผง">ผง (Powder)</option><option value="ใต้เครื่อง">ใต้เครื่อง (Kief)</option><option value="ใบทริม">ใบทริม (Trim)</option><option value="ไฟน้อลทริม">ไฟน้อลทริม (Final Trim)</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>สายพันธุ์ย่อย</label>
                     <select id="e_type" class="form-input">
-                        <option value="Hybrid">Hybrid</option>
-                        <option value="Sativa">Sativa</option>
-                        <option value="Indica">Indica</option>
-                        <option value="-">- (ไม่ระบุ)</option>
+                        <option value="Hybrid">Hybrid</option><option value="Sativa">Sativa</option><option value="Indica">Indica</option><option value="-">-</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>เกรด</label>
                     <select id="e_grade" class="form-input">
-                        <option value="Top">Top</option><option value="Mid">Mid</option><option value="Pop">Pop</option>
-                        <option value="Mini-pop">Mini-pop</option><option value="Mixed">Mixed</option><option value="Other">Other</option><option value="-">-</option>
+                        <option value="Top">Top</option><option value="Mid">Mid</option><option value="Pop">Pop</option><option value="Mini-pop">Mini-pop</option><option value="Mixed">Mixed</option><option value="Other">Other</option><option value="-">-</option>
                     </select>
                 </div>
             </div>
 
             <div class="grid-2" style="margin-top:10px;">
                 <div class="form-group"><label>ชื่อฟาร์ม</label><input type="text" id="e_farm" class="form-input" list="farm-suggestions"></div>
-                <div class="form-group"><label style="color: #ff4444;">ต้นทุนรับเข้าล่าสุด (บาท/กรัม)</label><input type="number" step="any" id="e_cost" class="form-input" style="border-color: #ff4444;"></div>
+                <div class="form-group"><label style="color: #ff4444;">ต้นทุนรับเข้าล่าสุด</label><input type="number" step="any" id="e_cost" class="form-input" style="border-color: #ff4444;"></div>
             </div>
 
             <div class="grid-3">
                 <div class="form-group"><label>ปลีก (1g)</label><input type="number" step="any" id="e_base" class="form-input"></div>
-                <div class="form-group"><label>ส่ง (1 ขีด) <span style="color:#ff4444; font-size:10px;">*(ราคา/1g)</span></label><input type="number" step="any" id="e_t1" class="form-input"></div>
-                <div class="form-group"><label>ส่ง (1 กิโลฯ) <span style="color:#ff4444; font-size:10px;">*(ราคา/1g)</span></label><input type="number" step="any" id="e_t2" class="form-input"></div>
+                <div class="form-group"><label>ส่ง (1 ขีด)</label><input type="number" step="any" id="e_t1" class="form-input"></div>
+                <div class="form-group"><label>ส่ง (1 กิโลฯ)</label><input type="number" step="any" id="e_t2" class="form-input"></div>
             </div>
 
             <button class="btn-submit" id="btn-save-edit" onclick="saveEditedProduct()" style="background: #b5952f; border-color: #d4af37; color: black;">💾 บันทึกการเปลี่ยนแปลง</button>
@@ -295,66 +276,18 @@
             </div>
 
             <div class="form-group text-left" style="margin-top: 15px; background: #0a0a0a; padding: 10px; border-radius: 6px; border: 1px dashed #d4af37;">
-                <label style="color: #d4af37; font-weight: bold; margin-bottom: 8px;">📸 ถ่ายรูปหลักฐาน (เลือกได้หลายรูป):</label>
-                <input type="file" id="add_stock_evidence" class="form-input" accept="image/*" multiple capture="environment" style="padding: 6px; border-color: #d4af37; background: #222;">
+                <label style="color: #d4af37; font-weight: bold; margin-bottom: 8px;">📸 ถ่ายรูปหลักฐาน (ไม่บังคับ):</label>
+                <input type="file" id="add_stock_evidence" class="form-input" accept="image/*" multiple style="padding: 6px; border-color: #d4af37; background: #222;">
             </div>
             
             <button class="btn-submit" id="btn-save-stock" onclick="saveAddedStock()" style="background: #006400; border-color: #004400; color: white;">✅ ยืนยันการรับเข้า</button>
         </div>
     </div>
 
-    <div id="imageViewModal" class="modal">
-        <div class="modal-content" style="text-align: center; max-width: 450px;">
-            <span class="close" onclick="closeImageView()">&times;</span>
-            <h2 id="viewImgTitle" style="color:#d4af37; margin-top:0; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px;">ชื่อสายพันธุ์</h2>
-            <div style="background: #000; border: 1px solid #333; border-radius: 8px; padding: 10px; margin-bottom: 20px; min-height: 200px; display: flex; align-items: center; justify-content: center;">
-                <img id="viewImgDisplay" src="" style="max-width: 100%; max-height: 300px; border-radius: 4px; display: none;">
-                <span id="viewImgPlaceholder" style="color: #666; font-size: 14px;">ไม่มีรูปภาพ</span>
-            </div>
-            <div style="display: flex; justify-content: center; gap: 10px;">
-                <button onclick="requestImageUpload()" class="btn-submit" style="margin-top:0; width:auto; padding: 10px 15px; background: #4a0e4e; font-size: 14px;">📸 เปลี่ยนรูป</button>
-                <button onclick="requestImageDelete()" class="btn-submit" id="btn-delete-img" style="margin-top:0; width:auto; padding: 10px 15px; background: #8b0000; border-color: #550000; font-size: 14px; display: none;">🗑️ ลบรูป</button>
-            </div>
-        </div>
-    </div>
+    <div id="imageViewModal" class="modal"><div class="modal-content" style="text-align: center; max-width: 450px;"><span class="close" onclick="closeImageView()">&times;</span><h2 id="viewImgTitle" style="color:#d4af37; margin-top:0; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px;">ชื่อสายพันธุ์</h2><div style="background: #000; border: 1px solid #333; border-radius: 8px; padding: 10px; margin-bottom: 20px; min-height: 200px; display: flex; align-items: center; justify-content: center;"><img id="viewImgDisplay" src="" style="max-width: 100%; max-height: 300px; border-radius: 4px; display: none;"><span id="viewImgPlaceholder" style="color: #666; font-size: 14px;">ไม่มีรูปภาพ</span></div><div style="display: flex; justify-content: center; gap: 10px;"><button onclick="requestImageUpload()" class="btn-submit" style="margin-top:0; width:auto; padding: 10px 15px; background: #4a0e4e; font-size: 14px;">📸 เปลี่ยนรูป</button><button onclick="requestImageDelete()" class="btn-submit" id="btn-delete-img" style="margin-top:0; width:auto; padding: 10px 15px; background: #8b0000; border-color: #550000; font-size: 14px; display: none;">🗑️ ลบรูป</button></div></div></div>
     <input type="file" id="quick-upload-input" style="display:none;" accept="image/*" onchange="processImageUpload(event)">
-    
-    <div id="qrModal" class="modal">
-        <div class="modal-content" style="width: 320px; text-align: center;">
-            <span class="close" onclick="closeQR()">&times;</span>
-            <h2 id="modalStrain" style="color:#d4af37; margin-top:0;"></h2>
-            <p id="modalSku" style="font-family: monospace; color:#aaa; font-size: 18px;"></p>
-            <div style="background: white; padding: 15px; display: inline-block; border-radius: 8px; margin: 15px 0;">
-                <img id="modalQrImg" src="" alt="QR Code" style="display:block;">
-            </div>
-            <button onclick="printQR()" class="btn-submit" style="margin-top:0;">🖨️ พิมพ์ QR Code</button>
-        </div>
-    </div>
-
-    <div id="clinicModal" class="modal">
-        <div class="modal-content" style="max-width: 500px; border-color: #39ff14;">
-            <span class="close" onclick="closeClinicConfig()">&times;</span>
-            <h2 style="color:#39ff14; margin-top:0; text-align:center; border-bottom: 1px solid #333; padding-bottom: 10px;">🏥 ตั้งค่าระบบคลินิก</h2>
-            <div class="form-group" style="text-align: center; margin-top: 20px; background: #050505; padding: 15px; border-radius: 8px; border: 1px dashed #39ff14;">
-                <label style="font-size: 16px; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
-                    <input type="checkbox" id="c_clinic_mode" style="width: 20px; height: 20px; cursor: pointer;">
-                    <span style="color: #39ff14;">🟢 เปิดใช้งานโหมดคลินิก</span>
-                </label>
-            </div>
-            <div class="grid-2" style="margin-top: 20px;">
-                <div class="form-group"><label style="color:#39ff14;">ชื่อแพทย์</label><input type="text" id="c_doctor_name" class="form-input"></div>
-                <div class="form-group"><label style="color:#39ff14;">เลขใบประกอบ</label><input type="text" id="c_doctor_license" class="form-input"></div>
-            </div>
-            <div class="form-group" style="margin-top: 15px;">
-                <label style="color:#39ff14;">✍️ อัปโหลดลายเซ็นแพทย์</label>
-                <input type="file" id="c_doctor_signature" class="form-input" accept="image/png, image/jpeg">
-                <div id="sig_preview_container" style="margin-top: 10px; display: none; text-align: center; background: white; padding: 10px; border-radius: 5px;">
-                    <img id="sig_preview" src="" style="max-height: 60px;">
-                </div>
-            </div>
-            <button class="btn-submit" onclick="saveClinicConfig()" style="background: #006400; border-color: #004400; color: white;">💾 บันทึก</button>
-        </div>
-    </div>
+    <div id="qrModal" class="modal"><div class="modal-content" style="width: 320px; text-align: center;"><span class="close" onclick="closeQR()">&times;</span><h2 id="modalStrain" style="color:#d4af37; margin-top:0;"></h2><p id="modalSku" style="font-family: monospace; color:#aaa; font-size: 18px;"></p><div style="background: white; padding: 15px; display: inline-block; border-radius: 8px; margin: 15px 0;"><img id="modalQrImg" src="" alt="QR Code" style="display:block;"></div><button onclick="printQR()" class="btn-submit" style="margin-top:0;">🖨️ พิมพ์ QR Code</button></div></div>
+    <div id="clinicModal" class="modal"><div class="modal-content" style="max-width: 500px; border-color: #39ff14;"><span class="close" onclick="closeClinicConfig()">&times;</span><h2 style="color:#39ff14; margin-top:0; text-align:center; border-bottom: 1px solid #333; padding-bottom: 10px;">🏥 ตั้งค่าระบบคลินิก</h2><div class="form-group" style="text-align: center; margin-top: 20px; background: #050505; padding: 15px; border-radius: 8px; border: 1px dashed #39ff14;"><label style="font-size: 16px; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;"><input type="checkbox" id="c_clinic_mode" style="width: 20px; height: 20px; cursor: pointer;"><span style="color: #39ff14;">🟢 เปิดใช้งานโหมดคลินิก</span></label></div><div class="grid-2" style="margin-top: 20px;"><div class="form-group"><label style="color:#39ff14;">ชื่อแพทย์</label><input type="text" id="c_doctor_name" class="form-input"></div><div class="form-group"><label style="color:#39ff14;">เลขใบประกอบ</label><input type="text" id="c_doctor_license" class="form-input"></div></div><div class="form-group" style="margin-top: 15px;"><label style="color:#39ff14;">✍️ อัปโหลดลายเซ็นแพทย์</label><input type="file" id="c_doctor_signature" class="form-input" accept="image/png, image/jpeg"><div id="sig_preview_container" style="margin-top: 10px; display: none; text-align: center; background: white; padding: 10px; border-radius: 5px;"><img id="sig_preview" src="" style="max-height: 60px;"></div></div><button class="btn-submit" onclick="saveClinicConfig()" style="background: #006400; border-color: #004400; color: white;">💾 บันทึก</button></div></div>
 
     <script>
         const supabaseUrl = 'https://zwpagcqoopvinufsgluc.supabase.co';
@@ -372,83 +305,82 @@
         let targetSkuForUpload = ''; 
         let sortCol = 'last_updated';
         let sortAsc = false;
-        let isManageMode = false; // 🌟 สถานะโหมดการจัดการ
+        let isManageMode = false; 
+        let isPriceAuditMode = false; // 🌟 สถานะปุ่มสแกนราคา
 
-        // ฟังก์ชันเปิด/ปิดเมนูซ่อน
-        function toggleMenu() {
-            const menu = document.getElementById('admin-menu');
-            menu.classList.toggle('show');
-        }
+        function toggleMenu() { document.getElementById('admin-menu').classList.toggle('show'); }
+        window.onclick = function(event) { if (!event.target.closest('.control-panel')) { document.getElementById('admin-menu').classList.remove('show'); } }
 
-        // 🌟 ฟังก์ชันเปิด/ปิด โหมดจัดการ (โชว์คอลัมน์ Action)
         function toggleManageMode() {
-            let pin = prompt("🔒 ยืนยันสิทธิ์เพื่อเปิดโหมดจัดการ (กรุณาใส่รหัส PIN):");
-            if (!pin) return;
+            let pin = prompt("🔒 ยืนยันสิทธิ์เพื่อเปิดโหมดจัดการ (กรุณาใส่รหัส PIN):"); if (!pin) return;
             let user = SYSTEM_PINS[pin];
-            
             if (user && (user.role === 'CEO' || user.role === 'Manager')) {
                 isManageMode = !isManageMode;
                 document.body.classList.toggle('manage-mode', isManageMode);
-                
                 const btn = document.getElementById('btn-toggle-manage');
-                if (isManageMode) {
-                    btn.innerHTML = "🔒 ปิดโหมดจัดการ (View Only)";
-                    btn.style.background = "#8b0000";
-                    btn.style.borderColor = "#550000";
-                    btn.style.color = "white";
-                } else {
-                    btn.innerHTML = "🔓 ปลดล็อกโหมดจัดการ";
-                    btn.style.background = "#111";
-                    btn.style.borderColor = "#d4af37";
-                    btn.style.color = "#d4af37";
-                }
-                // ปิดเมนู Z-Panel อัตโนมัติหลังกด
+                if (isManageMode) { btn.innerHTML = "🔒 ปิดโหมดจัดการ (View Only)"; btn.style.background = "#8b0000"; btn.style.borderColor = "#550000"; btn.style.color = "white"; } 
+                else { btn.innerHTML = "🔓 ปลดล็อกโหมดจัดการ"; btn.style.background = "#111"; btn.style.borderColor = "#d4af37"; btn.style.color = "#d4af37"; }
                 document.getElementById('admin-menu').classList.remove('show');
-            } else {
-                alert("❌ ไม่มีสิทธิ์เข้าถึง! (เฉพาะระดับผู้บริหารหรือผู้จัดการเท่านั้น)");
-            }
+            } else { alert("❌ ไม่มีสิทธิ์เข้าถึง!"); }
         }
 
-        // ปิดเมนูเมื่อคลิกที่อื่น
-        window.onclick = function(event) {
-            if (!event.target.closest('.control-panel')) {
-                const menu = document.getElementById('admin-menu');
-                if (menu.classList.contains('show')) menu.classList.remove('show');
+        // 🌟 ฟังก์ชันสลับโหมด Price Audit
+        function togglePriceAudit() {
+            isPriceAuditMode = !isPriceAuditMode;
+            const btn = document.getElementById('btn-price-audit');
+            if (isPriceAuditMode) {
+                btn.style.background = '#ff4444';
+                btn.innerHTML = '✅ เลิกกรองราคา';
+            } else {
+                btn.style.background = '#8b0000';
+                btn.innerHTML = '🚨 สินค้าไม่มีราคา';
             }
+            filterTable();
         }
 
         async function compressImage(file, maxWidth = 800, quality = 0.7) {
             return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
+                const reader = new FileReader(); reader.readAsDataURL(file);
                 reader.onload = event => {
-                    const img = new Image();
-                    img.src = event.target.result;
+                    const img = new Image(); img.src = event.target.result;
                     img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        let width = img.width; let height = img.height;
+                        const canvas = document.createElement('canvas'); let width = img.width; let height = img.height;
                         if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
-                        canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
+                        canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
                         canvas.toBlob(blob => { resolve(new File([blob], file.name, { type: 'image/jpeg' })); }, 'image/jpeg', quality);
-                    };
-                    img.onerror = error => reject(error);
-                };
-                reader.onerror = error => reject(error);
+                    }; img.onerror = error => reject(error);
+                }; reader.onerror = error => reject(error);
             });
         }
 
-        function toggleGrade(catId, gradeId) {
-            const cat = document.getElementById(catId).value;
-            const gradeSelect = document.getElementById(gradeId);
-            if (cat !== 'ดอก') {
-                gradeSelect.value = '-';
-                gradeSelect.disabled = true;
+        // 🌟 ฟังก์ชันยิง LINE แจ้งเตือนของเข้าคลัง (Webhook)
+        async function sendInboundLineNotify(type, itemData, imageUrls) {
+            const token = '2mqUKe/Rb3dM/vKhOPvuXB8ag0eCS7t8ITrg5+NRiTWKXhgeA/aypMOZc5aDDvpufwkkeioOULxPu7/57MGs7Y1HGGfMW7xZd9vQD0lyY5DID8X9dfYv6AYHm3q1vqLDHzsrPO51asEQDb7stjyMSgdB04t89/1O/w1cDnyilFU=';
+            const userId = 'Cbf93761b1ac023b9fbe28afa7efbfb16'; 
+            
+            let msgText = '';
+            if (type === 'NEW') {
+                msgText = `🌟 Z-Tech Inbound 🌟\n✅ เพิ่มรายการใหม่เข้าคลัง\n━━━━━━━━━━━━━━\n🌿 สินค้า: ${itemData.name}\n⚖️ แรกเข้า: ${itemData.weight} g\n📉 ทุน: ฿${itemData.cost}/g\n👨‍💼 แอดมิน: ${itemData.staff}`;
             } else {
-                gradeSelect.disabled = false;
-                if(gradeSelect.value === '-') gradeSelect.value = 'Top';
+                msgText = `📦 Z-Tech Restock 📦\n✅ เติมสต๊อกสินค้าเดิม\n━━━━━━━━━━━━━━\n🌿 สินค้า: ${itemData.name}\n⚖️ เติมเพิ่ม: +${itemData.weight} g\n📉 ทุน: ฿${itemData.cost}/g\n👨‍💼 แอดมิน: ${itemData.staff}`;
             }
+
+            let messagesArray = [{ type: 'text', text: msgText }];
+            if (imageUrls && imageUrls.length > 0) {
+                let lineImages = imageUrls.slice(0, 4); 
+                lineImages.forEach(url => { 
+                    if(url && url !== 'null') messagesArray.push({ type: 'image', originalContentUrl: url, previewImageUrl: url }); 
+                });
+            }
+
+            await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.line.me/v2/bot/message/push'), { 
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ to: userId, messages: messagesArray }) 
+            }).catch(e => console.warn(e));
+        }
+
+        function toggleGrade(catId, gradeId) {
+            const cat = document.getElementById(catId).value; const gradeSelect = document.getElementById(gradeId);
+            if (cat !== 'ดอก') { gradeSelect.value = '-'; gradeSelect.disabled = true; } else { gradeSelect.disabled = false; if(gradeSelect.value === '-') gradeSelect.value = 'Top'; }
         }
 
         async function loadInventory() {
@@ -461,42 +393,31 @@
                 document.getElementById('farm-filter').innerHTML = '<option value="">-- ทุกฟาร์ม --</option>' + uniqueFarms.map(f => `<option value="${f}">${f}</option>`).join('');
                 document.getElementById('farm-suggestions').innerHTML = uniqueFarms.map(f => `<option value="${f}">`).join('');
                 filterTable(); 
-            } else {
-                list.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 30px; color: #666;">ไม่มีข้อมูลในคลังสินค้า...</td></tr>`;
-            }
+            } else { list.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 30px; color: #666;">ไม่มีข้อมูลในคลังสินค้า...</td></tr>`; }
         }
 
         function sortTable(col) {
-            if(sortCol === col) sortAsc = !sortAsc; 
-            else { sortCol = col; sortAsc = true; }
+            if(sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = true; }
             allProducts.sort((a, b) => {
-                let valA = a[col] === null || a[col] === undefined ? '' : a[col];
-                let valB = b[col] === null || b[col] === undefined ? '' : b[col];
-                if (typeof valA === 'string') valA = valA.toLowerCase();
-                if (typeof valB === 'string') valB = valB.toLowerCase();
-                if (valA < valB) return sortAsc ? -1 : 1;
-                if (valA > valB) return sortAsc ? 1 : -1;
-                return 0;
-            });
-            filterTable(); 
+                let valA = a[col] === null || a[col] === undefined ? '' : a[col]; let valB = b[col] === null || b[col] === undefined ? '' : b[col];
+                if (typeof valA === 'string') valA = valA.toLowerCase(); if (typeof valB === 'string') valB = valB.toLowerCase();
+                if (valA < valB) return sortAsc ? -1 : 1; if (valA > valB) return sortAsc ? 1 : -1; return 0;
+            }); filterTable(); 
         }
 
         function filterTable() {
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             const farmTerm = document.getElementById('farm-filter').value;
-            const categoryTerm = document.getElementById('category-filter').value;
             const typeTerm = document.getElementById('type-filter').value; 
 
             const filteredData = allProducts.filter(item => {
-                const farmNameStr = item.farm_name ? item.farm_name.toLowerCase() : "";
-                const matchSearch = item.strain_name.toLowerCase().includes(searchTerm) || (item.sku && item.sku.toLowerCase().includes(searchTerm)) || farmNameStr.includes(searchTerm);
+                const matchSearch = item.strain_name.toLowerCase().includes(searchTerm) || (item.sku && item.sku.toLowerCase().includes(searchTerm)) || (item.farm_name || "").toLowerCase().includes(searchTerm);
                 const matchFarm = farmTerm === "" || item.farm_name === farmTerm;
-                const matchCategory = categoryTerm === "" || item.category === categoryTerm;
-                
-                const dbType = item.strain_type || '-';
-                const matchType = typeTerm === "" || dbType === typeTerm;
+                const matchType = typeTerm === "" || (item.strain_type || '-') === typeTerm;
+                // 🌟 กรองสินค้าที่ยังไม่ได้ใส่ราคา (0 หรือ null)
+                const matchPrice = isPriceAuditMode ? (item.price_base <= 0 || item.price_base === null) : true;
 
-                return matchSearch && matchFarm && matchCategory && matchType;
+                return matchSearch && matchFarm && matchType && matchPrice;
             });
             renderTable(filteredData);
         }
@@ -505,20 +426,15 @@
             const list = document.getElementById('product-list');
             if (dataToRender.length > 0) {
                 list.innerHTML = dataToRender.map(item => {
-                    let imgThumb = item.image_url ? `<img src="${item.image_url}" loading="lazy" class="thumb-img" title="ดูรูปขนาดใหญ่" onclick="openImageView('${item.sku}', '${item.strain_name}', '${item.image_url}')">` : `<div class="thumb-placeholder" title="เพิ่มรูปภาพ" onclick="openImageView('${item.sku}', '${item.strain_name}', null)">NO<br>IMG</div>`;
+                    let imgThumb = item.image_url ? `<img src="${item.image_url}" loading="lazy" class="thumb-img" onclick="openImageView('${item.sku}', '${item.strain_name}', '${item.image_url}')">` : `<div class="thumb-placeholder" onclick="openImageView('${item.sku}', '${item.strain_name}', null)">NO<br>IMG</div>`;
                     let safeWeight = Number(item.stock_weight || 0);
 
-                    let strainType = item.strain_type || '-';
-                    let typeClass = 'badge';
-                    if(strainType === 'Sativa') typeClass = 'badge type-sativa';
-                    else if(strainType === 'Indica') typeClass = 'badge type-indica';
-                    else if(strainType === 'Hybrid') typeClass = 'badge type-hybrid';
-
+                    let typeClass = 'badge'; let strainType = item.strain_type || '-';
+                    if(strainType === 'Sativa') typeClass = 'badge type-sativa'; else if(strainType === 'Indica') typeClass = 'badge type-indica'; else if(strainType === 'Hybrid') typeClass = 'badge type-hybrid';
                     let typeBadge = strainType !== '-' ? `<span class="${typeClass}">${strainType}</span>` : '<span style="color:#555;">-</span>';
 
                     let weightColor = '#39ff14'; 
-                    if(safeWeight <= 0) weightColor = '#ff4444'; 
-                    else if(safeWeight <= 20) weightColor = '#ffc107'; 
+                    if(safeWeight <= 0) weightColor = '#ff4444'; else if(safeWeight <= 20) weightColor = '#ffc107'; 
 
                     return `
                     <tr class="hover:bg-[#1a1a1a]">
@@ -531,169 +447,94 @@
                         <td style="color: #888;">${item.farm_name || '-'}</td>
                         <td style="color: ${weightColor}; font-weight: bold;">${safeWeight.toLocaleString()} g</td>
                         <td class="action-col" style="text-align:center; min-width: 190px;">
-                            <button onclick="openAddStockModal('${item.sku}', '${item.strain_name}', ${safeWeight})" class="btn-action" style="background: rgba(57,255,20,0.1); border-color: #39ff14; color: #39ff14; margin-right: 4px;" title="รับของเข้า">➕ สต๊อก</button>
-                            <button onclick="openEditModal('${item.sku}')" class="btn-action" style="background: rgba(212, 175, 55, 0.1); border-color: #d4af37; color: #d4af37; margin-right: 4px;" title="แก้ไขสินค้า">✏️ แก้ไข</button>
-                            <button onclick="openQR('${item.sku}', '${item.strain_name}', '${item.grade}')" class="btn-action" title="QR Code">🔳 QR</button>
+                            <button onclick="openAddStockModal('${item.sku}', '${item.strain_name}', ${safeWeight})" class="btn-action" style="background: rgba(57,255,20,0.1); border-color: #39ff14; color: #39ff14; margin-right: 4px;">➕ สต๊อก</button>
+                            <button onclick="openEditModal('${item.sku}')" class="btn-action" style="background: rgba(212, 175, 55, 0.1); border-color: #d4af37; color: #d4af37; margin-right: 4px;">✏️ แก้ไข</button>
+                            <button onclick="openQR('${item.sku}', '${item.strain_name}', '${item.grade}')" class="btn-action">🔳 QR</button>
                         </td>
-                    </tr>
-                    `;
+                    </tr>`;
                 }).join('');
-            } else {
-                list.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 20px; color: #666;">-- ไม่พบรายการที่ค้นหา --</td></tr>`;
-            }
+            } else { list.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 20px; color: #666;">-- ไม่พบรายการที่ค้นหา --</td></tr>`; }
         }
 
-        function checkAdmin(targetPage) {
-            let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (กรุณาใส่รหัส PIN):");
-            if (!pin) return;
-            let user = SYSTEM_PINS[pin];
-            if (user && user.role === 'CEO') {
-                if(targetPage === 'manage') openAddModal();
-            } else { alert("❌ ไม่มีสิทธิ์เข้าถึง! (สงวนสิทธิ์เฉพาะ CEO ในการเพิ่มสินค้า)"); }
-        }
-
+        function checkAdmin(targetPage) { let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (PIN):"); if(!pin) return; let user = SYSTEM_PINS[pin]; if(user && user.role === 'CEO') { if(targetPage === 'manage') openAddModal(); } else { alert("❌ ไม่มีสิทธิ์เข้าถึง!"); } }
         function generateSKU() { return `ZT-${Math.random().toString(36).substr(2, 6).toUpperCase()}`; }
-        
-        function openAddModal() { 
-            document.getElementById('f_sku').value = generateSKU(); 
-            document.getElementById('f_strain').value = ''; 
-            document.getElementById('f_category').value = 'ดอก'; 
-            document.getElementById('f_type').value = 'Hybrid'; 
-            document.getElementById('f_image').value = ''; 
-            document.getElementById('f_evidence').value = ''; 
-            toggleGrade('f_category', 'f_grade'); 
-            document.getElementById('addProductModal').style.display = 'block'; 
-        }
-        
+        function openAddModal() { document.getElementById('f_sku').value = generateSKU(); document.getElementById('f_strain').value = ''; document.getElementById('f_category').value = 'ดอก'; document.getElementById('f_type').value = 'Hybrid'; document.getElementById('f_image').value = ''; document.getElementById('f_evidence').value = ''; toggleGrade('f_category', 'f_grade'); document.getElementById('addProductModal').style.display = 'block'; }
         function closeAddModal() { document.getElementById('addProductModal').style.display = 'none'; }
 
         async function saveNewProduct() {
             const sku = document.getElementById('f_sku').value; const strain_name = document.getElementById('f_strain').value.trim();
-            const category = document.getElementById('f_category').value; 
-            const strain_type = document.getElementById('f_type').value; 
+            const category = document.getElementById('f_category').value; const strain_type = document.getElementById('f_type').value; 
             const grade = document.getElementById('f_grade').value; const farm_name = document.getElementById('f_farm').value.trim();
             const cost_price = parseFloat(document.getElementById('f_cost').value) || 0; const price_base = parseFloat(document.getElementById('f_base').value) || 0;
             const price_tier1 = parseFloat(document.getElementById('f_t1').value) || 0; const price_tier2 = parseFloat(document.getElementById('f_t2').value) || 0;
             let rawStock = document.getElementById('f_stock').value.replace(/,/g, ''); const stock_weight = parseFloat(rawStock) || 0;
-            
-            const imageFile = document.getElementById('f_image').files[0];
-            const evidenceFiles = document.getElementById('f_evidence').files;
+            const imageFile = document.getElementById('f_image').files[0]; const evidenceFiles = document.getElementById('f_evidence').files;
 
             if(!strain_name) return alert("⚠️ กรุณาระบุชื่อสายพันธุ์");
-
-            let exists = allProducts.find(p => p.strain_name.toLowerCase() === strain_name.toLowerCase());
-            if (exists) return alert("❌ ชื่อสินค้านี้ซ้ำกับที่มีอยู่ในระบบ! กรุณาเปลี่ยนชื่อ หรือไปใช้ปุ่ม ➕สต๊อก แทนค่ะ");
-
-            if(stock_weight > 0 && evidenceFiles.length === 0) return alert("⚠️ กรุณาแนบรูปถ่ายหลักฐาน สำหรับสต๊อกแรกเข้าก่อนบันทึก!");
-            if(evidenceFiles.length > 5) return alert("⚠️ รองรับหลักฐานไม่เกิน 5 รูปต่อครั้งค่ะ");
+            if(allProducts.find(p => p.strain_name.toLowerCase() === strain_name.toLowerCase())) return alert("❌ ชื่อสินค้านี้ซ้ำกับที่มีอยู่ในระบบ!");
+            if(stock_weight > 0 && evidenceFiles.length === 0) return alert("⚠️ กรุณาแนบรูปถ่ายหลักฐาน สำหรับสต๊อกแรกเข้า!");
+            if(evidenceFiles.length > 5) return alert("⚠️ รองรับหลักฐานไม่เกิน 5 รูปค่ะ");
 
             const btn = document.getElementById('save-btn'); const loading = document.getElementById('loadingOverlay');
-            btn.innerHTML = "⏳ กำลังบันทึก..."; btn.disabled = true; loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "⏳ กำลังบันทึกข้อมูลสินค้า...";
+            btn.innerHTML = "⏳ กำลังบันทึก..."; btn.disabled = true; loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "⏳ กำลังบันทึก...";
 
             try {
                 let finalImageUrl = null;
                 if (imageFile) {
                     let compressedCover = await compressImage(imageFile);
-                    const fileExt = compressedCover.name.split('.').pop(); const fileName = `item_${Date.now()}.${fileExt}`;
-                    const { error: uploadErr } = await _supabase.storage.from('ztech_images').upload(fileName, compressedCover); if (uploadErr) throw uploadErr;
-                    const { data: publicUrlData } = _supabase.storage.from('ztech_images').getPublicUrl(fileName); finalImageUrl = publicUrlData.publicUrl;
+                    const fileName = `item_${Date.now()}.${compressedCover.name.split('.').pop()}`;
+                    await _supabase.storage.from('ztech_images').upload(fileName, compressedCover); 
+                    finalImageUrl = _supabase.storage.from('ztech_images').getPublicUrl(fileName).data.publicUrl;
                 }
 
-                let finalEvidenceUrl = null;
+                let finalEvidenceUrl = null; let uploadedUrls = [];
                 if (stock_weight > 0 && evidenceFiles.length > 0) {
-                    let uploadedUrls = [];
                     for(let i=0; i < evidenceFiles.length; i++) {
                         let compEv = await compressImage(evidenceFiles[i]);
-                        const evExt = compEv.name.split('.').pop(); 
-                        const evName = `inbound_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${evExt}`;
-                        const { error: evErr } = await _supabase.storage.from('ztech_evidence').upload(evName, compEv); 
-                        if (evErr) throw evErr;
-                        const { data: evUrlData } = _supabase.storage.from('ztech_evidence').getPublicUrl(evName); 
-                        uploadedUrls.push(evUrlData.publicUrl);
+                        const evName = `inbound_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${compEv.name.split('.').pop()}`;
+                        await _supabase.storage.from('ztech_evidence').upload(evName, compEv); 
+                        uploadedUrls.push(_supabase.storage.from('ztech_evidence').getPublicUrl(evName).data.publicUrl);
                     }
                     finalEvidenceUrl = JSON.stringify(uploadedUrls);
                 }
 
-                const { error: invErr } = await _supabase.from('ztech_inventory').insert([{ 
-                    sku, strain_name, category, strain_type, grade, image_url: finalImageUrl, 
-                    farm_name, cost_price, price_base, price_tier1, price_tier2, stock_weight 
-                }]);
-                if (invErr) throw invErr;
+                await _supabase.from('ztech_inventory').insert([{ sku, strain_name, category, strain_type, grade, image_url: finalImageUrl, farm_name, cost_price, price_base, price_tier1, price_tier2, stock_weight }]);
+                if (stock_weight > 0) await _supabase.from('ztech_logs').insert([{ sku: sku, action_type: 'IN', weight_change: stock_weight, performed_by: `SYS: NEW ITEM [CEO Z]`, evidence_url: finalEvidenceUrl }]); 
                 
-                if (stock_weight > 0) { 
-                    await _supabase.from('ztech_logs').insert([{ 
-                        sku: sku, action_type: 'IN', weight_change: stock_weight, performed_by: `SYS: NEW ITEM [CEO Z]`,
-                        evidence_url: finalEvidenceUrl 
-                    }]); 
-                }
-                closeAddModal(); document.querySelectorAll('.form-input').forEach(input => { if(input.id !== 'f_category' && input.id !== 'f_grade' && input.id !== 'f_sku' && input.id !== 'f_type') input.value = ''; });
+                // 🌟 ยิง LINE Notify (เคส A)
+                let notifyImageUrls = uploadedUrls.length > 0 ? uploadedUrls : (finalImageUrl ? [finalImageUrl] : []);
+                if (stock_weight > 0) await sendInboundLineNotify('NEW', {name: strain_name, weight: stock_weight, cost: cost_price, staff: 'CEO Z'}, notifyImageUrls);
+
+                closeAddModal(); document.querySelectorAll('.form-input').forEach(i => { if(!['f_category','f_grade','f_sku','f_type'].includes(i.id)) i.value = ''; });
                 alert("✅ เพิ่มสินค้าเข้าคลังสำเร็จ!"); loadInventory(); 
-            } catch (error) { alert("❌ เกิดข้อผิดพลาด: " + error.message); } 
-            finally { btn.innerHTML = "💾 บันทึกข้อมูลลงระบบ"; btn.disabled = false; loading.style.display = 'none'; }
+            } catch (error) { alert("❌ เกิดข้อผิดพลาด: " + error.message); } finally { btn.innerHTML = "💾 บันทึกข้อมูลลงระบบ"; btn.disabled = false; loading.style.display = 'none'; }
         }
 
         function openEditModal(sku) {
-            let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (กรุณาใส่รหัส PIN):");
-            if (!pin) return;
-            let user = SYSTEM_PINS[pin];
+            let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (PIN):"); if (!pin) return; let user = SYSTEM_PINS[pin];
             if (user && user.role === 'CEO') {
-                let item = allProducts.find(p => p.sku === sku);
-                if (!item) return alert("❌ ไม่พบข้อมูลสินค้านี้ในระบบ");
-
-                document.getElementById('e_sku').value = item.sku;
-                document.getElementById('e_strain').value = item.strain_name || '';
-                document.getElementById('e_category').value = item.category || 'ดอก';
-                document.getElementById('e_type').value = item.strain_type || '-'; 
-                toggleGrade('e_category', 'e_grade'); 
-                document.getElementById('e_grade').value = item.grade || '-';
-                document.getElementById('e_farm').value = item.farm_name || '';
-                document.getElementById('e_cost').value = item.cost_price || 0;
-                document.getElementById('e_base').value = item.price_base || 0;
-                document.getElementById('e_t1').value = item.price_tier1 || 0;
-                document.getElementById('e_t2').value = item.price_tier2 || 0;
-
+                let item = allProducts.find(p => p.sku === sku); if (!item) return alert("❌ ไม่พบข้อมูล");
+                document.getElementById('e_sku').value = item.sku; document.getElementById('e_strain').value = item.strain_name || '';
+                document.getElementById('e_category').value = item.category || 'ดอก'; document.getElementById('e_type').value = item.strain_type || '-'; 
+                toggleGrade('e_category', 'e_grade'); document.getElementById('e_grade').value = item.grade || '-';
+                document.getElementById('e_farm').value = item.farm_name || ''; document.getElementById('e_cost').value = item.cost_price || 0;
+                document.getElementById('e_base').value = item.price_base || 0; document.getElementById('e_t1').value = item.price_tier1 || 0; document.getElementById('e_t2').value = item.price_tier2 || 0;
                 document.getElementById('editProductModal').style.display = 'block';
-            } else { alert("❌ ไม่มีสิทธิ์เข้าถึง! (สงวนสิทธิ์เฉพาะ CEO)"); }
+            } else { alert("❌ ไม่มีสิทธิ์เข้าถึง!"); }
         }
-
         function closeEditModal() { document.getElementById('editProductModal').style.display = 'none'; }
 
         async function saveEditedProduct() {
             const sku = document.getElementById('e_sku').value;
-            const category = document.getElementById('e_category').value;
-            const strain_type = document.getElementById('e_type').value; 
-            const grade = document.getElementById('e_grade').value;
-            const farm_name = document.getElementById('e_farm').value.trim();
-            const cost_price = parseFloat(document.getElementById('e_cost').value) || 0;
-            const price_base = parseFloat(document.getElementById('e_base').value) || 0;
-            const price_tier1 = parseFloat(document.getElementById('e_t1').value) || 0;
-            const price_tier2 = parseFloat(document.getElementById('e_t2').value) || 0;
-
+            const updateData = { category: document.getElementById('e_category').value, strain_type: document.getElementById('e_type').value, grade: document.getElementById('e_grade').value, farm_name: document.getElementById('e_farm').value.trim(), cost_price: parseFloat(document.getElementById('e_cost').value) || 0, price_base: parseFloat(document.getElementById('e_base').value) || 0, price_tier1: parseFloat(document.getElementById('e_t1').value) || 0, price_tier2: parseFloat(document.getElementById('e_t2').value) || 0 };
             const btn = document.getElementById('btn-save-edit'); const loading = document.getElementById('loadingOverlay');
             btn.innerHTML = "⏳ กำลังอัปเดต..."; btn.disabled = true; loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "⏳ กำลังบันทึก...";
-
-            try {
-                const { error: updateErr } = await _supabase.from('ztech_inventory').update({
-                    category: category,
-                    strain_type: strain_type, 
-                    grade: grade,
-                    farm_name: farm_name,
-                    cost_price: cost_price,
-                    price_base: price_base,
-                    price_tier1: price_tier1,
-                    price_tier2: price_tier2
-                }).eq('sku', sku);
-
-                if (updateErr) throw updateErr;
-                alert("✅ อัปเดตข้อมูลสินค้าสำเร็จ!"); closeEditModal(); loadInventory(); 
-            } catch (error) { alert("❌ เกิดข้อผิดพลาด: " + error.message);
-            } finally { btn.innerHTML = "💾 บันทึกการเปลี่ยนแปลง"; btn.disabled = false; loading.style.display = 'none'; }
+            try { await _supabase.from('ztech_inventory').update(updateData).eq('sku', sku); alert("✅ อัปเดตข้อมูลสำเร็จ!"); closeEditModal(); loadInventory(); } catch (error) { alert("❌ เกิดข้อผิดพลาด: " + error.message); } finally { btn.innerHTML = "💾 บันทึกการเปลี่ยนแปลง"; btn.disabled = false; loading.style.display = 'none'; }
         }
 
         let targetStockSku = ''; let targetStockStrain = ''; let currentStockWeight = 0; let restockRoleName = '';
         function openAddStockModal(sku, strain, currentWeight) {
-            let pin = prompt("🔒 ยืนยันสิทธิ์ผู้บริหารหรือผู้จัดการ (PIN):"); if (!pin) return;
-            let user = SYSTEM_PINS[pin];
+            let pin = prompt("🔒 ยืนยันสิทธิ์ผู้บริหารหรือผู้จัดการ (PIN):"); if (!pin) return; let user = SYSTEM_PINS[pin];
             if (user && (user.role === 'CEO' || user.role === 'Manager')) {
                 restockRoleName = user.name; targetStockSku = sku; targetStockStrain = strain; currentStockWeight = parseFloat(currentWeight) || 0;
                 document.getElementById('stockModalStrain').innerText = strain; document.getElementById('stockModalSku').innerText = sku; 
@@ -705,112 +546,52 @@
         
         async function saveAddedStock() {
             let rawAdd = document.getElementById('add_stock_weight').value.replace(/,/g, ''); let addedWeight = parseFloat(rawAdd);
-            if (!addedWeight || addedWeight <= 0) return alert("⚠️ กรุณาระบุน้ำหนักที่ถูกต้อง (ต้องมากกว่า 0)");
+            if (!addedWeight || addedWeight <= 0) return alert("⚠️ กรุณาระบุน้ำหนักที่ถูกต้อง");
             
             const evidenceFiles = document.getElementById('add_stock_evidence').files;
-            if (evidenceFiles.length === 0) return alert("⚠️ กรุณาแนบรูปถ่ายหลักฐาน!");
             if (evidenceFiles.length > 5) return alert("⚠️ จำกัดสูงสุดไม่เกิน 5 รูปค่ะ");
 
             const btn = document.getElementById('btn-save-stock'); btn.innerHTML = "⏳ กำลังบันทึก..."; btn.disabled = true;
-            const loading = document.getElementById('loadingOverlay'); loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "📸 อัปโหลดหลักฐาน...";
+            const loading = document.getElementById('loadingOverlay'); loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "📸 กำลังบันทึก...";
 
             try {
-                let uploadedUrls = [];
-                for(let i=0; i < evidenceFiles.length; i++) {
-                    let compEv = await compressImage(evidenceFiles[i]);
-                    const evExt = compEv.name.split('.').pop(); 
-                    const evName = `inbound_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${evExt}`;
-                    const { error: evUploadErr } = await _supabase.storage.from('ztech_evidence').upload(evName, compEv); 
-                    if (evUploadErr) throw evUploadErr;
-                    const { data: evUrlData } = _supabase.storage.from('ztech_evidence').getPublicUrl(evName); 
-                    uploadedUrls.push(evUrlData.publicUrl);
+                let uploadedUrls = []; let finalEvidenceUrl = null;
+                if (evidenceFiles.length > 0) {
+                    for(let i=0; i < evidenceFiles.length; i++) {
+                        let compEv = await compressImage(evidenceFiles[i]);
+                        const evName = `inbound_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${compEv.name.split('.').pop()}`;
+                        await _supabase.storage.from('ztech_evidence').upload(evName, compEv); 
+                        uploadedUrls.push(_supabase.storage.from('ztech_evidence').getPublicUrl(evName).data.publicUrl);
+                    }
+                    finalEvidenceUrl = JSON.stringify(uploadedUrls);
                 }
-                const finalEvidenceUrl = JSON.stringify(uploadedUrls);
 
-                document.getElementById('loadingText').innerText = "💾 อัปเดตคลังสินค้า...";
                 let newTotal = currentStockWeight + addedWeight;
-                const { error: invErr } = await _supabase.from('ztech_inventory').update({ stock_weight: newTotal }).eq('sku', targetStockSku); if (invErr) throw invErr;
+                await _supabase.from('ztech_inventory').update({ stock_weight: newTotal }).eq('sku', targetStockSku);
+                await _supabase.from('ztech_logs').insert([{ sku: targetStockSku, action_type: 'IN', weight_change: addedWeight, performed_by: `SYS: RESTOCK [${restockRoleName}]`, evidence_url: finalEvidenceUrl }]); 
                 
-                const { error: logErr } = await _supabase.from('ztech_logs').insert([{ 
-                    sku: targetStockSku, action_type: 'IN', weight_change: addedWeight, performed_by: `SYS: RESTOCK [${restockRoleName}]`,
-                    evidence_url: finalEvidenceUrl 
-                }]); 
-                if (logErr) throw logErr;
-                
+                // 🌟 ยิง LINE Notify (เคส B - ข้ามถ่ายรูปได้ ดึงรูปเก่าโชว์แทน)
+                let invItem = allProducts.find(p => p.sku === targetStockSku) || {};
+                let notifyImageUrls = uploadedUrls.length > 0 ? uploadedUrls : (invItem.image_url ? [invItem.image_url] : []);
+                await sendInboundLineNotify('RESTOCK', {name: targetStockStrain, weight: addedWeight, cost: invItem.cost_price || 0, staff: restockRoleName}, notifyImageUrls);
+
                 alert(`✅ รับเข้า ${addedWeight}g สำเร็จ!`); closeAddStockModal(); loadInventory();
             } catch (err) { alert("❌ เกิดข้อผิดพลาด: " + err.message); } finally { btn.innerHTML = "✅ ยืนยันการรับเข้า"; btn.disabled = false; loading.style.display = 'none'; }
         }
 
-        function openImageView(sku, strain_name, imgUrl) {
-            targetSkuForUpload = sku; document.getElementById('viewImgTitle').innerText = strain_name;
-            const imgDisplay = document.getElementById('viewImgDisplay'); const imgPlaceholder = document.getElementById('viewImgPlaceholder'); const btnDelete = document.getElementById('btn-delete-img');
-            if (imgUrl && imgUrl !== 'null') { imgDisplay.src = imgUrl; imgDisplay.style.display = 'block'; imgPlaceholder.style.display = 'none'; btnDelete.style.display = 'inline-block'; } 
-            else { imgDisplay.src = ''; imgDisplay.style.display = 'none'; imgPlaceholder.style.display = 'block'; btnDelete.style.display = 'none'; }
-            document.getElementById('imageViewModal').style.display = 'block';
-        }
+        function openImageView(sku, strain, imgUrl) { targetSkuForUpload = sku; document.getElementById('viewImgTitle').innerText = strain; const imgDisplay = document.getElementById('viewImgDisplay'); const imgPlaceholder = document.getElementById('viewImgPlaceholder'); const btnDelete = document.getElementById('btn-delete-img'); if (imgUrl && imgUrl !== 'null') { imgDisplay.src = imgUrl; imgDisplay.style.display = 'block'; imgPlaceholder.style.display = 'none'; btnDelete.style.display = 'inline-block'; } else { imgDisplay.src = ''; imgDisplay.style.display = 'none'; imgPlaceholder.style.display = 'block'; btnDelete.style.display = 'none'; } document.getElementById('imageViewModal').style.display = 'block'; }
         function closeImageView() { document.getElementById('imageViewModal').style.display = 'none'; }
-        function requestImageUpload() {
-            let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (กรุณาใส่รหัส PIN):"); if (!pin) return;
-            let user = SYSTEM_PINS[pin]; if (user && user.role === 'CEO') { document.getElementById('quick-upload-input').click(); } else { alert("❌ ไม่มีสิทธิ์เข้าถึง!"); }
-        }
-        async function requestImageDelete() {
-            let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหาร (กรุณาใส่รหัส PIN):"); if (!pin) return;
-            let user = SYSTEM_PINS[pin]; if (user && user.role === 'CEO') { if (confirm("⚠️ คุณแน่ใจหรือไม่ที่จะลบรูปภาพนี้ออกจากระบบ?")) await deleteImage(); } else { alert("❌ ไม่มีสิทธิ์เข้าถึง!"); }
-        }
-        async function processImageUpload(event) {
-            const file = event.target.files[0]; if(!file) return;
-            const loading = document.getElementById('loadingOverlay'); loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "📸 อัปโหลดรูปภาพใหม่...";
-            try {
-                let compImage = await compressImage(file);
-                const fileExt = compImage.name.split('.').pop(); const fileName = `item_${Date.now()}.${fileExt}`;
-                const { error: uploadErr } = await _supabase.storage.from('ztech_images').upload(fileName, compImage); if (uploadErr) throw uploadErr;
-                const { data: publicUrlData } = _supabase.storage.from('ztech_images').getPublicUrl(fileName);
-                const { error: updateErr } = await _supabase.from('ztech_inventory').update({ image_url: publicUrlData.publicUrl }).eq('sku', targetSkuForUpload); if (updateErr) throw updateErr;
-                closeImageView(); loadInventory();
-            } catch (err) { alert("❌ อัปโหลดรูปไม่สำเร็จ: " + err.message); } finally { event.target.value = ''; loading.style.display = 'none'; }
-        }
-        async function deleteImage() {
-            const loading = document.getElementById('loadingOverlay'); loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "🗑️ กำลังลบรูปภาพ...";
-            try { const { error: updateErr } = await _supabase.from('ztech_inventory').update({ image_url: null }).eq('sku', targetSkuForUpload); if (updateErr) throw updateErr; closeImageView(); loadInventory(); } catch (err) { alert("❌ ลบรูปไม่สำเร็จ: " + err.message); } finally { loading.style.display = 'none'; }
-        }
-        function openQR(sku, strain, grade) {
-            let gradeText = grade === '-' ? '' : ` (${grade})`; document.getElementById('modalStrain').innerText = strain + gradeText; document.getElementById('modalSku').innerText = sku; document.getElementById('modalQrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${sku}`; document.getElementById('qrModal').style.display = 'block';
-        }
+        function requestImageUpload() { let pin = prompt("🔒 PIN ผู้บริหาร:"); if(!pin) return; let user = SYSTEM_PINS[pin]; if(user && user.role === 'CEO') document.getElementById('quick-upload-input').click(); else alert("❌ ไม่มีสิทธิ์!"); }
+        async function requestImageDelete() { let pin = prompt("🔒 PIN ผู้บริหาร:"); if(!pin) return; let user = SYSTEM_PINS[pin]; if(user && user.role === 'CEO') { if(confirm("⚠️ ลบรูปภาพ?")) await deleteImage(); } else alert("❌ ไม่มีสิทธิ์!"); }
+        async function processImageUpload(event) { const file = event.target.files[0]; if(!file) return; const loading = document.getElementById('loadingOverlay'); loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "📸 อัปโหลดรูป..."; try { let compImg = await compressImage(file); const fileName = `item_${Date.now()}.${compImg.name.split('.').pop()}`; await _supabase.storage.from('ztech_images').upload(fileName, compImg); const url = _supabase.storage.from('ztech_images').getPublicUrl(fileName).data.publicUrl; await _supabase.from('ztech_inventory').update({ image_url: url }).eq('sku', targetSkuForUpload); closeImageView(); loadInventory(); } catch(err) { alert("❌ ไม่สำเร็จ"); } finally { event.target.value = ''; loading.style.display = 'none'; } }
+        async function deleteImage() { const loading = document.getElementById('loadingOverlay'); loading.style.display = 'flex'; try { await _supabase.from('ztech_inventory').update({ image_url: null }).eq('sku', targetSkuForUpload); closeImageView(); loadInventory(); } catch(err) { alert("❌ ไม่สำเร็จ"); } finally { loading.style.display = 'none'; } }
+        function openQR(sku, strain, grade) { document.getElementById('modalStrain').innerText = strain + (grade==='-'?'':` (${grade})`); document.getElementById('modalSku').innerText = sku; document.getElementById('modalQrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${sku}`; document.getElementById('qrModal').style.display = 'block'; }
         function closeQR() { document.getElementById('qrModal').style.display = 'none'; }
-        function printQR() {
-            let imgSrc = document.getElementById('modalQrImg').src; let title = document.getElementById('modalStrain').innerText; let sku = document.getElementById('modalSku').innerText;
-            let printWindow = window.open('', '', 'width=600,height=600'); printWindow.document.write(`<html><body style="text-align:center; font-family:sans-serif; margin-top:50px;"><h2 style="margin-bottom: 5px;">${title}</h2><p style="font-family:monospace; font-size:18px; margin-top:0;">${sku}</p><img src="${imgSrc}" style="width:200px; height:200px; border:2px solid #000; padding:10px;"><script>setTimeout(() => { window.print(); window.close(); }, 500);<\/script></body></html>`);
-        }
-        async function openClinicConfig() {
-            let pin = prompt("🔒 ยืนยันสิทธิ์ระดับผู้บริหารสูงสุด (PIN):"); if (!pin) return;
-            let user = SYSTEM_PINS[pin]; if (user && user.role === 'CEO') {
-                const loading = document.getElementById('loadingOverlay'); loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "⏳ โหลดข้อมูลคลินิก...";
-                try {
-                    const { data, error } = await _supabase.from('ztech_settings').select('*').eq('id', 1).single();
-                    if (error) throw error;
-                    if(data) {
-                        document.getElementById('c_clinic_mode').checked = data.clinic_mode; document.getElementById('c_doctor_name').value = data.doctor_name || ''; document.getElementById('c_doctor_license').value = data.doctor_license || '';
-                        if(data.doctor_signature_url) { document.getElementById('sig_preview').src = data.doctor_signature_url; document.getElementById('sig_preview_container').style.display = 'block'; }
-                    }
-                    document.getElementById('clinicModal').style.display = 'block';
-                } catch (err) { alert("❌ โหลดข้อมูลไม่สำเร็จ"); } finally { loading.style.display = 'none'; }
-            } else { alert("❌ ไม่มีสิทธิ์เข้าถึง!"); }
-        }
+        function printQR() { let imgSrc = document.getElementById('modalQrImg').src; let title = document.getElementById('modalStrain').innerText; let sku = document.getElementById('modalSku').innerText; let win = window.open('', '', 'width=600,height=600'); win.document.write(`<html><body style="text-align:center; font-family:sans-serif; margin-top:50px;"><h2 style="margin-bottom: 5px;">${title}</h2><p style="font-family:monospace; font-size:18px; margin-top:0;">${sku}</p><img src="${imgSrc}" style="width:200px; height:200px; border:2px solid #000; padding:10px;"><script>setTimeout(() => { window.print(); window.close(); }, 500);<\/script></body></html>`); }
+        
+        async function openClinicConfig() { let pin = prompt("🔒 PIN ผู้บริหารสูงสุด:"); if(!pin) return; let user = SYSTEM_PINS[pin]; if(user && user.role === 'CEO') { const loading = document.getElementById('loadingOverlay'); loading.style.display = 'flex'; try { const { data } = await _supabase.from('ztech_settings').select('*').eq('id', 1).single(); if(data) { document.getElementById('c_clinic_mode').checked = data.clinic_mode; document.getElementById('c_doctor_name').value = data.doctor_name || ''; document.getElementById('c_doctor_license').value = data.doctor_license || ''; if(data.doctor_signature_url) { document.getElementById('sig_preview').src = data.doctor_signature_url; document.getElementById('sig_preview_container').style.display = 'block'; } } document.getElementById('clinicModal').style.display = 'block'; } catch(e) {} finally { loading.style.display = 'none'; } } else alert("❌ ไม่มีสิทธิ์!"); }
         function closeClinicConfig() { document.getElementById('clinicModal').style.display = 'none'; }
-        async function saveClinicConfig() {
-            const clinic_mode = document.getElementById('c_clinic_mode').checked; const doctor_name = document.getElementById('c_doctor_name').value.trim(); const doctor_license = document.getElementById('c_doctor_license').value.trim(); const sigFile = document.getElementById('c_doctor_signature').files[0];
-            const loading = document.getElementById('loadingOverlay'); loading.style.display = 'flex'; document.getElementById('loadingText').innerText = "⏳ กำลังบันทึกข้อมูลคลินิก...";
-            try {
-                let finalSigUrl = document.getElementById('sig_preview').src;
-                if(sigFile) {
-                    const fileExt = sigFile.name.split('.').pop(); const fileName = `sig_${Date.now()}.${fileExt}`;
-                    const { error: uploadErr } = await _supabase.storage.from('ztech_images').upload(fileName, sigFile); if (uploadErr) throw uploadErr;
-                    const { data: publicUrlData } = _supabase.storage.from('ztech_images').getPublicUrl(fileName); finalSigUrl = publicUrlData.publicUrl;
-                }
-                const { error } = await _supabase.from('ztech_settings').update({ clinic_mode: clinic_mode, doctor_name: doctor_name, doctor_license: doctor_license, doctor_signature_url: finalSigUrl !== window.location.href ? finalSigUrl : null, updated_at: new Date().toISOString() }).eq('id', 1);
-                if (error) throw error; alert("✅ บันทึกการตั้งค่าคลินิกเรียบร้อยแล้ว!"); closeClinicConfig();
-            } catch (err) { alert("❌ บันทึกไม่สำเร็จ"); } finally { loading.style.display = 'none'; }
-        }
+        async function saveClinicConfig() { const mode = document.getElementById('c_clinic_mode').checked; const name = document.getElementById('c_doctor_name').value.trim(); const lic = document.getElementById('c_doctor_license').value.trim(); const file = document.getElementById('c_doctor_signature').files[0]; const load = document.getElementById('loadingOverlay'); load.style.display = 'flex'; try { let url = document.getElementById('sig_preview').src; if(file) { const fName = `sig_${Date.now()}.${file.name.split('.').pop()}`; await _supabase.storage.from('ztech_images').upload(fName, file); url = _supabase.storage.from('ztech_images').getPublicUrl(fName).data.publicUrl; } await _supabase.from('ztech_settings').update({ clinic_mode: mode, doctor_name: name, doctor_license: lic, doctor_signature_url: url !== window.location.href ? url : null, updated_at: new Date().toISOString() }).eq('id', 1); alert("✅ บันทึกสำเร็จ!"); closeClinicConfig(); } catch(e) { alert("❌ ไม่สำเร็จ"); } finally { load.style.display = 'none'; } }
 
         loadInventory();
     </script>
