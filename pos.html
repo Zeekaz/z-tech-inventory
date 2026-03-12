@@ -355,7 +355,6 @@
                 let safeWeight = Number(item.stock_weight || 0);
                 let isOutOfStock = safeWeight <= 0;
                 
-                // 🌟 Logic ตรวจสอบราคาสินค้า (ล็อกปุ่มถ้าไม่มีราคา)
                 let hasNoPrice = basePrice <= 0;
                 let priceDisplay = hasNoPrice 
                     ? `<div class="absolute bottom-1 right-1 bg-red-900/90 text-white text-[9px] px-1.5 py-0.5 rounded border border-red-500 z-10 font-bold shadow-md">❌ ยังไม่ระบุราคา</div>`
@@ -395,25 +394,67 @@
             });
         }
 
+        // 🌟 อัปเกรดระบบประมวลผล QR Code (กำจัดอักขระขยะ)
         function processScanResult(skuScanned) {
-            skuScanned = skuScanned.trim().toUpperCase(); if (!skuScanned) return;
+            // กรองเอาเฉพาะ A-Z, 0-9 และเครื่องหมายขีด (-) เท่านั้น
+            skuScanned = skuScanned.trim().toUpperCase().replace(/[^A-Z0-9-]/g, ''); 
+            if (!skuScanned) return;
+            
             let foundItem = globalInventory.find(item => item.sku && item.sku.toUpperCase() === skuScanned);
-            if (foundItem) addToCart(foundItem.strain_name, foundItem.price_base || 0, foundItem.price_tier1 || 0, foundItem.price_tier2 || 0, Number(foundItem.stock_weight||0), foundItem.sku);
-            else showToast('❌ ไม่พบสินค้ารหัส [' + skuScanned + ']');
+            if (foundItem) {
+                addToCart(foundItem.strain_name, foundItem.price_base || 0, foundItem.price_tier1 || 0, foundItem.price_tier2 || 0, Number(foundItem.stock_weight||0), foundItem.sku);
+            } else {
+                showToast(`❌ ไม่พบสินค้ารหัส [${skuScanned}]`);
+            }
             document.getElementById('scanner-input').value = '';
         }
 
         document.getElementById('scanner-input').addEventListener('keypress', function(e) { if (e.key === 'Enter') { e.preventDefault(); processScanResult(this.value); } });
 
+        // 🌟 อัปเกรดระบบกล้องให้เสถียรและอ่านเฉพาะ QR Code
         function toggleCamera() {
             const readerDiv = document.getElementById('qr-reader');
-            if (readerDiv.style.display === 'block') { if(html5QrcodeScanner) { html5QrcodeScanner.clear(); html5QrcodeScanner = null; } readerDiv.style.display = 'none'; } 
-            else { readerDiv.style.display = 'block'; html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 200, height: 200} }, false); html5QrcodeScanner.render((decodedText) => { toggleCamera(); processScanResult(decodedText); }, (error) => { }); }
+            if (readerDiv.style.display === 'block') { 
+                if(html5QrcodeScanner) { 
+                    html5QrcodeScanner.clear().then(() => {
+                        html5QrcodeScanner = null;
+                        readerDiv.style.display = 'none';
+                    }).catch(e => {
+                        html5QrcodeScanner = null;
+                        readerDiv.style.display = 'none';
+                    });
+                } else {
+                    readerDiv.style.display = 'none'; 
+                }
+            } else { 
+                readerDiv.style.display = 'block'; 
+                // บังคับให้อ่านเฉพาะ QR Code เท่านั้น (ป้องกันไปสแกนโดนบาร์โค้ดปกติ)
+                html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { 
+                    fps: 10, 
+                    qrbox: {width: 250, height: 250},
+                    formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ] 
+                }, false); 
+                
+                html5QrcodeScanner.render((decodedText) => { 
+                    // ปิดกล้องอย่างปลอดภัยก่อนไปเรียก processScanResult
+                    if (html5QrcodeScanner) {
+                        html5QrcodeScanner.clear().then(() => {
+                            html5QrcodeScanner = null;
+                            document.getElementById('qr-reader').style.display = 'none';
+                            processScanResult(decodedText); 
+                        }).catch(e => {
+                            html5QrcodeScanner = null;
+                            document.getElementById('qr-reader').style.display = 'none';
+                            processScanResult(decodedText); 
+                        });
+                    }
+                }, (error) => { /* Ignore regular scanning errors */ }); 
+            }
         }
 
         function addToCart(name, base, t1, t2, stock, sku) {
             if (stock <= 0) return showToast(`⚠️ สินค้าหมด: [${name}] ไม่มีสินค้าในคลังค่ะ`);
-            if (base <= 0) return showToast(`⚠️ ไม่สามารถหยิบได้: สินค้านี้ยังไม่ได้ระบุราคา!`); // ดักจับอีกชั้นเพื่อความชัวร์
+            if (base <= 0) return showToast(`⚠️ ไม่สามารถหยิบได้: สินค้านี้ยังไม่ได้ระบุราคา!`); 
             
             let existingIndex = cart.findIndex(item => item.name === name);
             if (existingIndex !== -1) {
